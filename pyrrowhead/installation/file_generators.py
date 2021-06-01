@@ -126,8 +126,8 @@ def generate_all_files(cloud_config, yaml_path, target_path):
     try:
         shutil.copy(yaml_path.absolute(), target_path)
     except shutil.SameFileError:
-        ...
+        pass
     # Make mk_certs.sh executable
     mk_cert_path = target_path / 'certgen/mk_certs.sh'
     os.chmod(mk_cert_path, os.stat(mk_cert_path).st_mode | stat.S_IEXEC)
-    rich_console.print(Text('Copyied files.'))
+    rich_console.print(Text('Copied files.'))
