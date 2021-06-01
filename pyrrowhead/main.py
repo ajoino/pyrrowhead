@@ -1,8 +1,10 @@
 from pathlib import Path
-from typing import Optional, Tuple, List
+from typing import Optional, List
 
 import typer
 
+from pyrrowhead.cloud_start.start import start_local_cloud
+from pyrrowhead.cloud_start.stop import stop_local_cloud
 from pyrrowhead.installation.installation import install_cloud, uninstall_cloud
 from pyrrowhead.installation.setup import create_cloud_config, CloudConfiguration
 from pyrrowhead.configuration.setup import enable_ssl as enable_ssl_func
@@ -17,25 +19,24 @@ def configure(enable_ssl: Optional[bool] = typer.Option(None, '--enable-ssl/--di
 
 
 @app.command()
-def install(config_file: str, installation_target: Optional[str] = typer.Argument(None)):
-    config_file_path = Path(config_file)
-    target = Path(installation_target) if installation_target else config_file_path.parent
+def install(config_file: Path, installation_target: Optional[Path] = typer.Argument(None)):
+    target = installation_target if installation_target else config_file.parent
 
-    install_cloud(config_file_path, target)
+    install_cloud(config_file, target)
 
 
 @app.command()
 def uninstall(
-        installation_target: str,
+        installation_target: Path,
         complete: bool = typer.Option(False, '--complete'),
         keep_root: bool = typer.Option(False, '--keep-root'),
 ):
-    uninstall_cloud(Path(installation_target), complete, keep_root)
+    uninstall_cloud(installation_target, complete, keep_root)
 
 
 @app.command()
 def setup(
-        installation_target: str,
+        installation_target: Path,
         cloud_name: str,
         company_name: str,
         ip_address: str = typer.Option('127.0.0.1'),
@@ -44,7 +45,7 @@ def setup(
         include: Optional[List[CloudConfiguration]] = typer.Option('', case_sensitive=False),
 ):
     create_cloud_config(
-            Path(installation_target),
+            installation_target,
             cloud_name,
             company_name,
             ssl_enabled,
@@ -53,6 +54,14 @@ def setup(
             include,
     )
 
+
+@app.command()
+def up(cloud_directory: Path = typer.Option(Path.cwd())):
+    start_local_cloud(cloud_directory)
+
+@app.command()
+def down(cloud_directory: Path = typer.Option(Path.cwd())):
+    stop_local_cloud(cloud_directory)
 
 
 if __name__ == '__main__':
