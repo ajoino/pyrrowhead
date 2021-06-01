@@ -11,10 +11,12 @@ from importlib.resources import path
 from jinja2 import Environment, PackageLoader, select_autoescape
 import yaml
 import yamlloader
+from rich.text import Text
 
 from pyrrowhead.database_config.passwords import db_passwords
 import pyrrowhead.database_config as database_config
 import pyrrowhead.certificate_generation as certificate_generation
+from pyrrowhead import rich_console
 
 yaml_safedump = partial(yaml.dump, Dumper=yamlloader.ordereddict.CSafeDumper)
 
@@ -108,8 +110,11 @@ def generate_docker_compose_file(cloud_config, target_path):
 
 def generate_all_files(cloud_config, yaml_path, target_path):
     generate_config_files(cloud_config, target_path)
+    rich_console.print(Text('Generated core system configuration files.'))
     generate_certgen(cloud_config, target_path)
+    rich_console.print(Text('Generated certificate generation files.'))
     generate_docker_compose_file(cloud_config, target_path)
+    rich_console.print(Text('Generated docker-compose.yml.'))
     # Copy files that need not be generated
     with path(database_config, 'initSQL.sh') as init_sql_path:
         shutil.copy(init_sql_path, target_path)
@@ -118,7 +123,11 @@ def generate_all_files(cloud_config, yaml_path, target_path):
     with path(certificate_generation, 'rm_certs.sh') as rm_certs_path:
         shutil.copy(rm_certs_path, target_path / 'certgen')
     # Copy the config file
-    shutil.copy(yaml_path.absolute(), target_path)
+    try:
+        shutil.copy(yaml_path.absolute(), target_path)
+    except shutil.SameFileError:
+        ...
     # Make mk_certs.sh executable
     mk_cert_path = target_path / 'certgen/mk_certs.sh'
     os.chmod(mk_cert_path, os.stat(mk_cert_path).st_mode | stat.S_IEXEC)
+    rich_console.print(Text('Copyied files.'))

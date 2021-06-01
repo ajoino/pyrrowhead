@@ -10,6 +10,10 @@ cloud:
       system_name: test_provider
       address: 127.0.0.1
       port: 7655
+    test_consumer:
+      system_name: test_consumer
+      address: 127.0.0.1
+      port: 7656
   core_systems:
     service_registry:
       system_name: service_registry

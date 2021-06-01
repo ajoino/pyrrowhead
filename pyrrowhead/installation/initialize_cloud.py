@@ -1,5 +1,9 @@
 import subprocess
-from pathlib import Path
+
+from rich.text import Text
+
+from pyrrowhead import rich_console
+
 
 def check_certs_exist(cloud_directory, cloud_name):
     cert_directory = cloud_directory / f'cloud-{cloud_name}/crypto'
@@ -17,12 +21,15 @@ def check_mysql_volume_exists(cloud_name):
             capture_output=True,
     ).stdout.decode()
     # If mysql volume doesn't exists in stdout find returns -1
-    return ps_output.find(f'mysql.{cloud_name}') == -1
+    return ps_output.find(f'mysql.{cloud_name}') != -1
 
 def initialize_cloud(cloud_directory, cloud_name):
     if not check_certs_exist(cloud_directory, cloud_name):
-        subprocess.run(['./mk_certs.sh'], cwd=cloud_directory / 'certgen')
+        subprocess.run(['./mk_certs.sh'], cwd=cloud_directory / 'certgen', capture_output=True)
+        rich_console.print(Text('Created certificates.'))
     if not check_sql_initialized(cloud_directory):
-        subprocess.run(['./initSQL.sh'], cwd=cloud_directory)
-    if check_mysql_volume_exists(cloud_name):
-        subprocess.run(['docker', 'volume', 'create', '--name', f'mysql.{cloud_name}'])
+        subprocess.run(['./initSQL.sh'], cwd=cloud_directory, capture_output=True)
+        rich_console.print(Text('Initialized SQL tables.'))
+    if not check_mysql_volume_exists(cloud_name):
+        subprocess.run(['docker', 'volume', 'create', '--name', f'mysql.{cloud_name}'], capture_output=True)
+        rich_console.print(Text('Created docker volume.'))

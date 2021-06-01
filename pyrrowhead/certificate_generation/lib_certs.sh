@@ -30,7 +30,7 @@ create_root_keystore() {
     mkdir -p "$(dirname "${ROOT_KEYSTORE}")"
     rm -f "${ROOT_CERT_FILE}"
 
-    keytool -genkeypair -v \
+    keytool -genkeypair  \
       -keystore "${ROOT_KEYSTORE}" \
       -storepass:env "PASSWORD" \
       -keyalg "RSA" \
@@ -45,7 +45,7 @@ create_root_keystore() {
   if [ ! -f "${ROOT_CERT_FILE}" ]; then
     echo -e "\e[34mCreating \e[33m${ROOT_CERT_FILE}\e[34m ...\e[0m"
 
-    keytool -exportcert -v \
+    keytool -exportcert  \
       -keystore "${ROOT_KEYSTORE}" \
       -storepass:env "PASSWORD" \
       -alias "${ROOT_KEY_ALIAS}" \
@@ -84,7 +84,7 @@ create_cloud_keystore() {
     mkdir -p "$(dirname "${CLOUD_KEYSTORE}")"
     rm -f "${CLOUD_CERT_FILE}"
 
-    keytool -genkeypair -v \
+    keytool -genkeypair  \
       -keystore "${CLOUD_KEYSTORE}" \
       -storepass:env "PASSWORD" \
       -keyalg "RSA" \
@@ -95,7 +95,7 @@ create_cloud_keystore() {
       -dname "CN=${CLOUD_KEY_ALIAS}" \
       -ext "BasicConstraints=ca:true,pathlen:2"
 
-    keytool -importcert -v \
+    keytool -importcert  \
       -keystore "${CLOUD_KEYSTORE}" \
       -storepass:env "PASSWORD" \
       -alias "${ROOT_KEY_ALIAS}" \
@@ -103,12 +103,12 @@ create_cloud_keystore() {
       -trustcacerts \
       -noprompt
 
-    keytool -certreq -v \
+    keytool -certreq  \
       -keystore "${CLOUD_KEYSTORE}" \
       -storepass:env "PASSWORD" \
       -alias "${CLOUD_KEY_ALIAS}" \
       -keypass:env "PASSWORD" |
-      keytool -gencert -v \
+      keytool -gencert  \
         -keystore "${ROOT_KEYSTORE}" \
         -storepass:env "PASSWORD" \
         -validity "3650" \
@@ -128,7 +128,7 @@ create_cloud_keystore() {
   if [ ! -f "${CLOUD_CERT_FILE}" ]; then
     echo -e "\e[34mCreating \e[33m${CLOUD_CERT_FILE}\e[34m ...\e[0m"
 
-    keytool -exportcert -v \
+    keytool -exportcert  \
       -keystore "${CLOUD_KEYSTORE}" \
       -storepass:env "PASSWORD" \
       -alias "${CLOUD_KEY_ALIAS}" \
@@ -174,7 +174,7 @@ create_system_keystore() {
     mkdir -p "$(dirname "${SYSTEM_KEYSTORE}")"
     rm -f "${SYSTEM_PUB_FILE}"
 
-    keytool -genkeypair -v \
+    keytool -genkeypair  \
       -keystore "${SYSTEM_KEYSTORE}" \
       -storepass:env "PASSWORD" \
       -keyalg "RSA" \
@@ -185,7 +185,7 @@ create_system_keystore() {
       -dname "CN=${SYSTEM_KEY_ALIAS}" \
       -ext "SubjectAlternativeName=${SAN}"
 
-    keytool -importcert -v \
+    keytool -importcert  \
       -keystore "${SYSTEM_KEYSTORE}" \
       -storepass:env "PASSWORD" \
       -alias "${ROOT_KEY_ALIAS}" \
@@ -193,7 +193,7 @@ create_system_keystore() {
       -trustcacerts \
       -noprompt
 
-    keytool -importcert -v \
+    keytool -importcert  \
       -keystore "${SYSTEM_KEYSTORE}" \
       -storepass:env "PASSWORD" \
       -alias "${CLOUD_KEY_ALIAS}" \
@@ -201,12 +201,12 @@ create_system_keystore() {
       -trustcacerts \
       -noprompt
 
-    keytool -certreq -v \
+    keytool -certreq  \
       -keystore "${SYSTEM_KEYSTORE}" \
       -storepass:env "PASSWORD" \
       -alias "${SYSTEM_KEY_ALIAS}" \
       -keypass:env "PASSWORD" |
-      keytool -gencert -v \
+      keytool -gencert  \
         -keystore "${CLOUD_KEYSTORE}" \
         -storepass:env "PASSWORD" \
         -validity "3650" \
@@ -296,7 +296,7 @@ create_sysop_keystore() {
   if [ ! -f "${SYSOP_CERT_FILE}" ]; then
     echo -e "\e[34mCreating \e[33m${SYSOP_CERT_FILE}\e[34m ...\e[0m"
 
-    keytool -exportcert -v \
+    keytool -exportcert  \
       -keystore "${SYSOP_KEYSTORE}" \
       -storepass:env "PASSWORD" \
       -alias "${SYSOP_KEY_ALIAS}" \
@@ -344,7 +344,7 @@ create_truststore() {
     mkdir -p "$(dirname "${TRUSTSTORE}")"
 
     for ((j = 1; j < ARGC; j = j + 2)); do
-      keytool -importcert -v \
+      keytool -importcert  \
         -keystore "${TRUSTSTORE}" \
         -storepass:env "PASSWORD" \
         -file "${ARGV[j]}" \
