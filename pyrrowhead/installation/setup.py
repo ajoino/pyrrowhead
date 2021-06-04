@@ -57,10 +57,30 @@ def create_cloud_config(target_directory, cloud_name, company_name, ssl_enabled,
         }
     }
     onboarding_core = OrderedDict({
-        "system_registry": {},
-        "device_registry": {},
-        "onboarding_controller": {},
-        "certificate_authority": {},
+        "system_registry": {
+            "system_name": "system_registry",
+            "address": ip_address,
+            "domain": "systemregistry",
+            "port": 8437,
+        },
+        "device_registry": {
+            "system_name": "device_registry",
+            "address": ip_address,
+            "domain": "deviceregistry",
+            "port": 8439,
+        },
+        "onboarding_controller": {
+            "system_name": "onboarding_controller",
+            "address": ip_address,
+            "domain": "onboarding-controller",
+            "port": 8435,
+        },
+        "certificate_authority": {
+            "system_name": "certificate_authority",
+            "address": ip_address,
+            "domain": "certificate-authority",
+            "port": 8448,
+        },
     })
 
     cloud_core_services = mandatory_core_systems

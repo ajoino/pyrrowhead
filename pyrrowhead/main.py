@@ -8,8 +8,10 @@ from pyrrowhead.cloud_start.stop import stop_local_cloud
 from pyrrowhead.installation.installation import install_cloud, uninstall_cloud
 from pyrrowhead.installation.setup import create_cloud_config, CloudConfiguration
 from pyrrowhead.configuration.setup import enable_ssl as enable_ssl_func
+from pyrrowhead.management.serviceregistry import sr_app
 
 app = typer.Typer()
+app.add_typer(sr_app)
 
 
 @app.command()
@@ -33,7 +35,6 @@ def uninstall(
 ):
     uninstall_cloud(installation_target, complete, keep_root)
 
-
 @app.command()
 def setup(
         installation_target: Path,
@@ -53,6 +54,7 @@ def setup(
             do_install,
             include,
     )
+
 
 
 @app.command()
