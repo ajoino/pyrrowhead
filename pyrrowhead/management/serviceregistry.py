@@ -4,6 +4,7 @@ from typing import Optional, Tuple, List
 import json
 
 import typer
+from rich import box
 from rich.syntax import Syntax
 from rich.text import Text
 from rich.table import Table, Column
@@ -144,7 +145,7 @@ def display_service_table(response, show_system, show_access_policy, id):
             Column(header='Service definition'),
             Column(header='Interface', style='green'),
             title="Registered Services",
-            show_edge=False,
+            box=box.SIMPLE,
     )
 
     if show_access_policy:
@@ -158,7 +159,7 @@ def display_service_table(response, show_system, show_access_policy, id):
                 style='blue',
         )
 
-    # Returned data is different if service registry is queried by id or service definition
+    # Returned data is formatted differently if service registry is queried by id
     if id:
         json_data = {"data": [json_data]}
 
@@ -175,21 +176,3 @@ def display_service_table(response, show_system, show_access_policy, id):
         service_table.add_row(*row_data)
 
     rich_console.print(service_table)
-
-
-@sr_app.command(name='query')
-def query_sr(
-        service_definition: Optional[str] = typer.Argument(''),
-        id: Optional[int] = None,
-        all: Optional[bool] = typer.Option(None),
-        address: str = CoreSystemAddress,
-        port: int = SRPort,
-        cert_dir: Path = CertDirectory,
-):
-    query_end = '' if not service_definition else f'servicedef/{service_definition}'
-    resp = get_service(
-            f'https://{address}:{port}/serviceregistry/mgmt/{query_end}',
-            cert_dir,
-    )
-    rich_console.print(Syntax(json.dumps(resp.json(), indent=2), 'json'))
-    #reqests.get()
