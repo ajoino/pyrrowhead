@@ -9,9 +9,15 @@ from pyrrowhead.installation.installation import install_cloud, uninstall_cloud
 from pyrrowhead.installation.setup import create_cloud_config, CloudConfiguration
 from pyrrowhead.configuration.setup import enable_ssl as enable_ssl_func
 from pyrrowhead.management.serviceregistry import sr_app
+from pyrrowhead.management.orchestrator import orch_app
+from pyrrowhead.management.authorization import auth_app
+from pyrrowhead.management.systemregistry import sys_app
 
 app = typer.Typer()
 app.add_typer(sr_app)
+app.add_typer(orch_app)
+app.add_typer(auth_app)
+app.add_typer(sys_app)
 
 
 @app.command()

@@ -24,6 +24,8 @@ def services(
         all: bool = typer.Option(None, '--all', '-A'),
         show_provider: bool = typer.Option(None, '--show-provider', '-s'),
         show_access_policy: bool = typer.Option(False, '--show-access-policy', '-c', show_default=False),
+        show_service_uri: bool = typer.Option(False, '--show-service-uri', '-u', show_default=False),
+        raw_output: bool = typer.Option(False, '--raw-output', '-r', show_default=False),
         address: str = CoreSystemAddress,
         port: int = CoreSystemPort(8443),
         cert_dir: Path = CertDirectory,
@@ -34,6 +36,8 @@ def services(
             all,
             show_provider,
             show_access_policy,
+            show_service_uri,
+            raw_output,
             address,
             port,
             cert_dir
@@ -99,7 +103,7 @@ def remove_service(
     )
 
     if resp.status_code in {400, 401, 500}:
-        rich_console.print(Text(f'Service registration failed: {resp.json()["errorMessage"]}'))
+        rich_console.print(Text(f'Service unregistration failed: {resp.json()["errorMessage"]}'))
 
 
 
@@ -109,6 +113,8 @@ def list_services(
         all: bool,
         show_system: bool,
         show_access_policy: bool,
+        show_service_uri: bool,
+        raw_output: bool,
         address: Optional[str],
         port: Optional[int],
         cert_dir: Optional[Path]
@@ -133,11 +139,17 @@ def list_services(
         )
     else:
         raise typer.Exit()
-    #rich_console.print(Syntax(json.dumps(resp.json(), indent=2), 'json'))
-    display_service_table(resp, show_system, show_access_policy, id=(id is not None))
+    if raw_output:
+        print(resp.text)
+        # TODO: return resp.json()?
+        raise typer.Exit()
+
+    service_table = create_service_table(resp, show_system, show_access_policy, show_service_uri, id=(id is not None))
+
+    rich_console.print(service_table)
 
 
-def display_service_table(response, show_system, show_access_policy, id):
+def create_service_table(response, show_system, show_access_policy, show_service_uri, id) -> Table:
     json_data = response.json()
 
     service_table = Table(
@@ -148,6 +160,11 @@ def display_service_table(response, show_system, show_access_policy, id):
             box=box.SIMPLE,
     )
 
+    if show_service_uri:
+        service_table.add_column(
+                header='Service URI',
+                style='bright_yellow'
+        )
     if show_access_policy:
         service_table.add_column(
                 header='Access Policy',
@@ -169,10 +186,13 @@ def display_service_table(response, show_system, show_access_policy, id):
             service['serviceDefinition']['serviceDefinition'],
             service['interfaces'][0]['interfaceName'],
         ]
+
+        if show_service_uri:
+            row_data.append(service['serviceUri'])
         if show_access_policy:
             row_data.append(service['secure'])
         if show_system:
-            row_data.append(service['provider']['systemName'])
+            row_data.append(f'{service["provider"]["systemName"]}  (id: {service["provider"]["id"]})')
         service_table.add_row(*row_data)
 
-    rich_console.print(service_table)
+    return service_table

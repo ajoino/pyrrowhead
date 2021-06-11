@@ -1,5 +1,7 @@
 import subprocess
 
+import yaml
+import yamlloader.ordereddict
 from rich.text import Text
 
 from pyrrowhead import rich_console
@@ -24,9 +26,12 @@ def check_mysql_volume_exists(cloud_name):
     return ps_output.find(f'mysql.{cloud_name}') != -1
 
 def initialize_cloud(cloud_directory, cloud_name):
-    if not check_certs_exist(cloud_directory, cloud_name):
-        subprocess.run(['./mk_certs.sh'], cwd=cloud_directory / 'certgen', capture_output=True)
-        rich_console.print(Text('Created certificates.'))
+    #if not check_certs_exist(cloud_directory, cloud_name):
+    subprocess.run(['./mk_certs.sh'], cwd=cloud_directory / 'certgen', capture_output=True)
+    with open(cloud_directory / 'cloud_config.yaml') as config_file:
+        cloud_config = yaml.load(config_file, Loader=yamlloader.ordereddict.CSafeLoader)["cloud"]
+
+    rich_console.print(Text('Created certificates.'))
     if not check_sql_initialized(cloud_directory):
         subprocess.run(['./initSQL.sh'], cwd=cloud_directory, capture_output=True)
         rich_console.print(Text('Initialized SQL tables.'))

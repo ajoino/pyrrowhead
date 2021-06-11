@@ -1,15 +1,15 @@
 import typer
 
-orch_app = typer.Typer(name='orchestration')
+auth_app = typer.Typer(name='authorization')
 
-@orch_app.command(name='list')
-def list_orchestration_rules():
+@auth_app.command(name='list')
+def list_authorization_rules():
     pass
 
-@orch_app.command(name='add')
-def add_orchestration_rule():
+@auth_app.command(name='add')
+def add_authorization_rule():
     pass
 
-@orch_app.command(name='remove')
-def remove_orchestration_rule():
+@auth_app.command(name='remove')
+def remove_authorization_rule():
     pass
