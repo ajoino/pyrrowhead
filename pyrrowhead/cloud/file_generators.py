@@ -39,7 +39,7 @@ def generate_config_files(cloud_config, target_path):
     sr_port = core_systems['service_registry']['port']
 
     for system, config in core_systems.items():
-        system_cn = f'{config["system_name"]}.{cloud_config["cloud_name"]}.{cloud_config["company_name"]}.arrowhead.eu'
+        system_cn = f'{config["system_name"]}.{cloud_config["cloud_name"]}.{cloud_config["organization_name"]}.arrowhead.eu'
         template = env.get_template(f"core_system_config/{system}.properties")
 
         system_config_file = template.render(

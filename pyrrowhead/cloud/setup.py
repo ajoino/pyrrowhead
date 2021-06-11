@@ -1,3 +1,4 @@
+from pathlib import Path
 from collections import OrderedDict
 from enum import Enum
 import ipaddress
@@ -5,7 +6,7 @@ import ipaddress
 import yaml
 import yamlloader
 
-from pyrrowhead.installation.installation import install_cloud
+from pyrrowhead.cloud.installation import install_cloud
 
 
 class CloudConfiguration(str, Enum):
@@ -14,7 +15,15 @@ class CloudConfiguration(str, Enum):
     ONBOARDING = "onboarding"
 
 
-def create_cloud_config(target_directory, cloud_name, company_name, ssl_enabled, ip_subnet, do_install, include):
+def create_cloud_config(
+        target_directory,
+        cloud_name,
+        organization_name,
+        ssl_enabled,
+        ip_subnet,
+        do_install,
+        include
+):
     network = ipaddress.ip_network(ip_subnet)
     mandatory_core_systems = OrderedDict({
         "service_registry": {
@@ -81,9 +90,7 @@ def create_cloud_config(target_directory, cloud_name, company_name, ssl_enabled,
     cloud_core_services = mandatory_core_systems
     ip_start = len(mandatory_core_systems) + 3
     if CloudConfiguration.EVENTHANDLER in include:
-        cloud_core_services.update(
-                insert_ips(event_handling_core, network, ip_start)
-        )
+        cloud_core_services.update(insert_ips(event_handling_core, network, ip_start))
         ip_start += len(event_handling_core)
     if CloudConfiguration.INTERCLOUD in include:
         cloud_core_services.update(insert_ips(inter_cloud_core, network, ip_start))
@@ -94,7 +101,7 @@ def create_cloud_config(target_directory, cloud_name, company_name, ssl_enabled,
     cloud_config = {
         "cloud": OrderedDict({
             "cloud_name": cloud_name,
-            "company_name": company_name,
+            "organization_name": organization_name,
             "ssl_enabled": ssl_enabled,
             "subnet": str(network),
 
@@ -103,7 +110,17 @@ def create_cloud_config(target_directory, cloud_name, company_name, ssl_enabled,
         })
     }
 
-    with open(target_directory / 'cloud_config.yaml', 'w') as yaml_file:
+    target_directory = target_directory / f'{organization_name}/{cloud_name}'
+
+    if not target_directory.is_absolute():
+        target_directory = target_directory.expanduser()
+
+    if not target_directory.exists():
+        Path.mkdir(target_directory, parents=True)
+
+    print(target_directory)
+
+    with open(target_directory / 'cloud_config.yaml', 'w', ) as yaml_file:
         yaml.dump(cloud_config, yaml_file, Dumper=yamlloader.ordereddict.CSafeDumper)
 
     if do_install:
