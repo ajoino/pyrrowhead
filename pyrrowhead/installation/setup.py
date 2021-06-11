@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from enum import Enum
+import ipaddress
 
 import yaml
 import yamlloader
@@ -13,23 +14,24 @@ class CloudConfiguration(str, Enum):
     ONBOARDING = "onboarding"
 
 
-def create_cloud_config(target_directory, cloud_name, company_name, ssl_enabled, ip_address, do_install, include):
+def create_cloud_config(target_directory, cloud_name, company_name, ssl_enabled, ip_subnet, do_install, include):
+    network = ipaddress.ip_network(ip_subnet)
     mandatory_core_systems = OrderedDict({
         "service_registry": {
             "system_name": "service_registry",
-            "address": ip_address,
+            "address": str(network[3]),
             "domain": "serviceregistry",
             "port": 8443,
         },
         "orchestrator": {
             "system_name": "orchestrator",
-            "address": ip_address,
+            "address": str(network[4]),
             "domain": "orchestrator",
             "port": 8441,
         },
         "authorization": {
             "system_name": "authorization",
-            "address": ip_address,
+            "address": str(network[5]),
             "domain": "authorization",
             "port": 8445,
         }
@@ -37,13 +39,11 @@ def create_cloud_config(target_directory, cloud_name, company_name, ssl_enabled,
     inter_cloud_core = OrderedDict({
         "gateway": {
             "system_name": "gateway",
-            "address": ip_address,
             "domain": "gateway",
             "port": 8453,
         },
         "gatekeeper": {
             "system_name": "gatekeeper",
-            "address": ip_address,
             "domain":  "gatekeeper",
             "port": 8449,
         }
@@ -51,7 +51,6 @@ def create_cloud_config(target_directory, cloud_name, company_name, ssl_enabled,
     event_handling_core = {
         "event_handler": {
             "system_name": "event_handler",
-            "address": ip_address,
             "domain": "eventhandler",
             "port": 8455
         }
@@ -59,42 +58,45 @@ def create_cloud_config(target_directory, cloud_name, company_name, ssl_enabled,
     onboarding_core = OrderedDict({
         "system_registry": {
             "system_name": "system_registry",
-            "address": ip_address,
             "domain": "systemregistry",
             "port": 8437,
         },
         "device_registry": {
             "system_name": "device_registry",
-            "address": ip_address,
             "domain": "deviceregistry",
             "port": 8439,
         },
-        "onboarding_controller": {
-            "system_name": "onboarding_controller",
-            "address": ip_address,
-            "domain": "onboarding-controller",
-            "port": 8435,
-        },
         "certificate_authority": {
             "system_name": "certificate_authority",
-            "address": ip_address,
             "domain": "certificate-authority",
             "port": 8448,
+        },
+        "onboarding_controller": {
+            "system_name": "onboarding_controller",
+            "domain": "onboarding-controller",
+            "port": 8435,
         },
     })
 
     cloud_core_services = mandatory_core_systems
+    ip_start = len(mandatory_core_systems) + 3
     if CloudConfiguration.EVENTHANDLER in include:
-        cloud_core_services.update(event_handling_core)
+        cloud_core_services.update(
+                insert_ips(event_handling_core, network, ip_start)
+        )
+        ip_start += len(event_handling_core)
     if CloudConfiguration.INTERCLOUD in include:
-        cloud_core_services.update(inter_cloud_core)
+        cloud_core_services.update(insert_ips(inter_cloud_core, network, ip_start))
+        ip_start += len(inter_cloud_core)
     if CloudConfiguration.ONBOARDING in include:
-        cloud_core_services.update(onboarding_core)
+        cloud_core_services.update(insert_ips(onboarding_core, network, ip_start))
+        ip_start += len(onboarding_core)
     cloud_config = {
         "cloud": OrderedDict({
             "cloud_name": cloud_name,
             "company_name": company_name,
             "ssl_enabled": ssl_enabled,
+            "subnet": str(network),
 
             "client_systems": None,
             "core_systems": cloud_core_services,
@@ -106,3 +108,10 @@ def create_cloud_config(target_directory, cloud_name, company_name, ssl_enabled,
 
     if do_install:
         install_cloud(target_directory / 'cloud_config.yaml', target_directory)
+
+
+def insert_ips(system_dict, network, start):
+    return {
+        sys_name: {**sys_data, **{'address': str(network[i])}}
+        for i, (sys_name, sys_data) in enumerate(system_dict.items(), start=start)
+    }

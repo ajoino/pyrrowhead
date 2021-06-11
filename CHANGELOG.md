@@ -5,4 +5,5 @@
 Unreleased
 
  - System query is now supported when the System registry is present.
- - Service query supports the `-show-service-uri/-u` flag.
+ - Service query supports the `--show-service-uri/-u` flag.
+ - Setup and installation now set up the docker subnetwork and container ip addresses.

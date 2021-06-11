@@ -46,7 +46,7 @@ def setup(
         installation_target: Path,
         cloud_name: str,
         company_name: str,
-        ip_address: str = typer.Option('127.0.0.1'),
+        ip_address: str = typer.Option('172.16.1.0/24'),
         ssl_enabled: bool = typer.Option(True, '--ssl-enabled'),
         do_install: bool = typer.Option(False, '--install'),
         include: Optional[List[CloudConfiguration]] = typer.Option('', case_sensitive=False),

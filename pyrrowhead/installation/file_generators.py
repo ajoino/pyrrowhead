@@ -7,6 +7,7 @@ from functools import partial
 from collections import OrderedDict
 import os, stat
 from importlib.resources import path
+import ipaddress
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 import yaml
@@ -34,7 +35,7 @@ def generate_config_files(cloud_config, target_path):
 
     core_systems = cloud_config['core_systems']
 
-    sr_address = core_systems['service_registry']['domain']
+    sr_address = core_systems['service_registry']['address']
     sr_port = core_systems['service_registry']['port']
 
     for system, config in core_systems.items():
@@ -80,12 +81,20 @@ def generate_docker_compose_file(cloud_config, target_path):
                 'image': 'mysql:5.7',
                 'environment': ['MYSQL_ROOT_PASSWORD=123456'],
                 'volumes': [f'mysql.{cloud_config["cloud_name"]}:/var/lib/mysql', './sql:/docker-entrypoint-initdb.d/'],
+                'networks': {'default': {'ipv4_address': str(ipaddress.ip_network(cloud_config["subnet"])[2])}},
                 'ports': ['3306:3306'],
             },
         }),
         'volumes': {
             f'mysql.{cloud_config["cloud_name"]}': {
                 'external': True
+            }
+        },
+        'networks': {
+            'default': {
+                'ipam': {
+                    'config': [{"subnet": cloud_config["subnet"]}]
+                }
             }
         }
     })
@@ -102,6 +111,7 @@ def generate_docker_compose_file(cloud_config, target_path):
                 f'./cloud-{cloud_name}/crypto/{core_system}.p12:/{core_name}/{core_system}.p12',
                 f'./cloud-{cloud_name}/crypto/truststore.p12:/{core_name}/truststore.p12',
             ],
+            'networks': {'default': {'ipv4_address': config["address"]}},
             'ports': [f'{config["port"]}:{config["port"]}'],
         }
 
