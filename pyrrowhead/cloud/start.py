@@ -10,7 +10,7 @@ from rich.text import Text
 import typer
 
 from pyrrowhead import rich_console
-from .stop import stop_local_cloud
+from pyrrowhead.cloud.stop import stop_local_cloud
 from pyrrowhead.utils import switch_directory
 
 def check_server(address, port, secure, certfile, keyfile, cafile):
@@ -54,6 +54,7 @@ def start_local_cloud(cloud_directory: Path):
     with open(cloud_directory / 'cloud_config.yaml') as config_file:
         cloud_config = yaml.load(config_file, Loader=yamlloader.ordereddict.Loader)
     cloud_name = cloud_config["cloud"]["cloud_name"]
+    org_name = cloud_config["cloud"]["organization_name"]
     ssl_enabled = cloud_config["cloud"]["ssl_enabled"]
 
     sysop_certfile = cloud_directory / f'cloud-{cloud_name}/crypto/sysop.crt'
@@ -64,7 +65,7 @@ def start_local_cloud(cloud_directory: Path):
 
     with switch_directory(cloud_directory):
         with rich_console.status("MySQL instance starting...") as status:
-            output = subprocess.run(['docker-compose', 'up', '-d', f'mysql.{cloud_name}'], capture_output=True)
+            output = subprocess.run(['docker-compose', 'up', '-d', f'mysql.{cloud_name}.{org_name}'], capture_output=True)
             check_returncode(output, status)
             rich_console.print(Text('MySQL instance started.'))
             for core_system, core_system_config in core_systems.items():

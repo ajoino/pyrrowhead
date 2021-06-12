@@ -25,7 +25,7 @@ def check_mysql_volume_exists(cloud_name):
     # If mysql volume doesn't exists in stdout find returns -1
     return ps_output.find(f'mysql.{cloud_name}') != -1
 
-def initialize_cloud(cloud_directory, cloud_name):
+def initialize_cloud(cloud_directory, cloud_name, organization_name):
     #if not check_certs_exist(cloud_directory, cloud_name):
     subprocess.run(['./mk_certs.sh'], cwd=cloud_directory / 'certgen', capture_output=True)
     with open(cloud_directory / 'cloud_config.yaml') as config_file:
@@ -36,5 +36,5 @@ def initialize_cloud(cloud_directory, cloud_name):
         subprocess.run(['./initSQL.sh'], cwd=cloud_directory, capture_output=True)
         rich_console.print(Text('Initialized SQL tables.'))
     if not check_mysql_volume_exists(cloud_name):
-        subprocess.run(['docker', 'volume', 'create', '--name', f'mysql.{cloud_name}'], capture_output=True)
+        subprocess.run(['docker', 'volume', 'create', '--name', f'mysql.{cloud_name}.{organization_name}'], capture_output=True)
         rich_console.print(Text('Created docker volume.'))

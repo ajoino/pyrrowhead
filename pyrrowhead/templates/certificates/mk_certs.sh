@@ -15,7 +15,7 @@ create_root_keystore \
 
 create_cloud_keystore \
   "cloud-root/crypto/root.p12" "arrowhead.eu" \
-  "cloud-{{ cloud_name }}/crypto/{{ cloud_name }}.p12" "{{ cloud_name }}.{{ company_name }}.arrowhead.eu"
+  "cloud-{{ cloud_name }}/crypto/{{ cloud_name }}.p12" "{{ cloud_name }}.{{ organization_name }}.arrowhead.eu"
 
 create_consumer_system_keystore() {
   SYSTEM_NAME=$1
@@ -23,8 +23,8 @@ create_consumer_system_keystore() {
 
   create_system_keystore \
     "cloud-root/crypto/root.p12" "arrowhead.eu" \
-    "cloud-{{ cloud_name }}/crypto/{{ cloud_name }}.p12" "{{ cloud_name }}.{{ company_name }}.arrowhead.eu" \
-    "cloud-{{ cloud_name }}/crypto/${SYSTEM_NAME}.p12" "${SYSTEM_NAME}.{{ cloud_name }}.{{ company_name }}.arrowhead.eu" \
+    "cloud-{{ cloud_name }}/crypto/{{ cloud_name }}.p12" "{{ cloud_name }}.{{ organization_name }}.arrowhead.eu" \
+    "cloud-{{ cloud_name }}/crypto/${SYSTEM_NAME}.p12" "${SYSTEM_NAME}.{{ cloud_name }}.{{ organization_name }}.arrowhead.eu" \
     "${SYSTEM_SANS}"
 }
 
@@ -39,9 +39,9 @@ create_consumer_system_keystore "{{ system }}" "ip:{{ config['address'] }}"
 
 create_sysop_keystore \
   "cloud-root/crypto/root.p12" "arrowhead.eu" \
-  "cloud-{{ cloud_name }}/crypto/{{ cloud_name }}.p12" "{{ cloud_name }}.{{ company_name }}.arrowhead.eu" \
-  "cloud-{{ cloud_name }}/crypto/sysop.p12" "sysop.{{ cloud_name }}.{{ company_name }}.arrowhead.eu"
+  "cloud-{{ cloud_name }}/crypto/{{ cloud_name }}.p12" "{{ cloud_name }}.{{ organization_name }}.arrowhead.eu" \
+  "cloud-{{ cloud_name }}/crypto/sysop.p12" "sysop.{{ cloud_name }}.{{ organization_name }}.arrowhead.eu"
 
 create_truststore \
   "cloud-{{ cloud_name }}/crypto/truststore.p12" \
-  "cloud-{{ cloud_name }}/crypto/{{ cloud_name }}.crt" "{{ cloud_name }}.{{ company_name }}.arrowhead.eu" \
+  "cloud-{{ cloud_name }}/crypto/{{ cloud_name }}.crt" "{{ cloud_name }}.{{ organization_name }}.arrowhead.eu" \

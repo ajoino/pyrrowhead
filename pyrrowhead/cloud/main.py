@@ -5,18 +5,43 @@ import typer
 
 from pyrrowhead.cloud.installation import install_cloud, uninstall_cloud
 from pyrrowhead.cloud.setup import CloudConfiguration, create_cloud_config
-from pyrrowhead.cloud_start.start import start_local_cloud
-from pyrrowhead.cloud_start.stop import stop_local_cloud
-from pyrrowhead.configuration.setup import enable_ssl as enable_ssl_func
-from pyrrowhead.utils import clouds_directory
+from pyrrowhead.cloud.start import start_local_cloud
+from pyrrowhead.cloud.stop import stop_local_cloud
+from pyrrowhead.cloud.configuration import enable_ssl as enable_ssl_func
+from pyrrowhead.utils import clouds_directory, switch_directory
 
 cloud_app = typer.Typer(name='cloud')
 
+def decide_cloud_directory(
+        cloud_identifier: str,
+        cloud_name: str,
+        organization_name: str,
+        clouds_directory: Path
+) -> Path:
+    if cloud_identifier:
+        return clouds_directory.joinpath(*[part for part in reversed(cloud_identifier.split('.'))])
+    elif cloud_name is not None and organization_name is not None:
+        return clouds_directory.joinpath(organization_name, cloud_name)
+    else:
+        raise RuntimeError()
 
 @cloud_app.command()
-def configure(enable_ssl: Optional[bool] = typer.Option(None, '--enable-ssl/--disable-ssl')):
-    if enable_ssl is not None:
-        enable_ssl_func(enable_ssl)
+def configure(
+        cloud_identifier: str = typer.Argument(''),
+        cloud_name: Optional[str] = typer.Option(None, '--cloud', '-c'),
+        organization_name: Optional[str] = typer.Option(None, '--org', '-o'),
+        clouds_directory: Path = clouds_directory,
+        enable_ssl: Optional[bool] = typer.Option(None, '--enable-ssl/--disable-ssl')
+):
+    target = decide_cloud_directory(
+            cloud_identifier,
+            cloud_name,
+            organization_name,
+            clouds_directory,
+    )
+    with switch_directory(target):
+        if enable_ssl is not None:
+            enable_ssl_func(enable_ssl)
 
 
 @cloud_app.command()
@@ -38,14 +63,12 @@ def install(
         organization_name: Optional[str] = typer.Option(None, '--org', '-o'),
         clouds_directory: Path = clouds_directory,
 ):
-    #target = installation_target if installation_target else config_file.parent
-
-    if cloud_identifier:
-        target = clouds_directory.joinpath(*[part for part in reversed(cloud_identifier.split('.'))])
-    elif cloud_name is not None and organization_name is not None:
-        target = clouds_directory.joinpath(organization_name, cloud_name)
-    else:
-        raise RuntimeError()
+    target = decide_cloud_directory(
+            cloud_identifier,
+            cloud_name,
+            organization_name,
+            clouds_directory,
+    )
     config_file = target / 'cloud_config.yaml'
 
     if not target.exists():
@@ -63,42 +86,69 @@ def uninstall(
         complete: bool = typer.Option(False, '--complete'),
         keep_root: bool = typer.Option(False, '--keep-root'),
 ):
-    if cloud_identifier:
-        target = clouds_directory.joinpath(*[part for part in reversed(cloud_identifier.split('.'))])
-    elif cloud_name is not None and organization_name is not None:
-        target = clouds_directory.joinpath(organization_name, cloud_name)
-    else:
-        raise RuntimeError()
+    target = decide_cloud_directory(
+            cloud_identifier,
+            cloud_name,
+            organization_name,
+            clouds_directory,
+    )
 
+    stop_local_cloud(target)
     uninstall_cloud(target, complete, keep_root)
 
 
 @cloud_app.command()
 def setup(
-        cloud_name: str,
-        company_name: str,
+        cloud_identifier: str = typer.Argument(''),
+        cloud_name: Optional[str] = typer.Option(None, '--cloud', '-c'),
+        organization_name: Optional[str] = typer.Option(None, '--org', '-o'),
         installation_target: Path = clouds_directory,
-        ip_address: str = typer.Option('172.16.1.0/24'),
+        ip_network: str = typer.Option('172.16.1.0/24'),
         ssl_enabled: bool = typer.Option(True, '--ssl-enabled'),
         do_install: bool = typer.Option(False, '--install'),
         include: Optional[List[CloudConfiguration]] = typer.Option('', case_sensitive=False),
 ):
+    if cloud_identifier:
+        cloud_name, organization_name = cloud_identifier.split('.')
+
     create_cloud_config(
             installation_target,
             cloud_name,
-            company_name,
+            organization_name,
             ssl_enabled,
-            ip_address,
+            ip_network,
             do_install,
             include,
     )
 
 
 @cloud_app.command()
-def up(cloud_directory: Path = typer.Option(Path.cwd())):
-    start_local_cloud(cloud_directory)
+def up(
+        cloud_identifier: str = typer.Argument(''),
+        cloud_name: Optional[str] = typer.Option(None, '--cloud', '-c'),
+        organization_name: Optional[str] = typer.Option(None, '--org', '-o'),
+        clouds_directory: Path = clouds_directory,
+):
+    target = decide_cloud_directory(
+            cloud_identifier,
+            cloud_name,
+            organization_name,
+            clouds_directory,
+    )
+    start_local_cloud(target)
 
 
 @cloud_app.command()
-def down(cloud_directory: Path = typer.Option(Path.cwd())):
-    stop_local_cloud(cloud_directory)
+def down(
+        cloud_identifier: str = typer.Argument(''),
+        cloud_name: Optional[str] = typer.Option(None, '--cloud', '-c'),
+        organization_name: Optional[str] = typer.Option(None, '--org', '-o'),
+        clouds_directory: Path = clouds_directory,
+):
+    target = decide_cloud_directory(
+            cloud_identifier,
+            cloud_name,
+            organization_name,
+            clouds_directory,
+    )
+    stop_local_cloud(target)

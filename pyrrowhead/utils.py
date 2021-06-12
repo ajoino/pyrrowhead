@@ -8,7 +8,7 @@ from pyrrowhead import constants
 
 APP_NAME = 'pyrrowhead'
 APP_DIR = Path(typer.get_app_dir(APP_NAME))
-clouds_directory = typer.Argument(APP_DIR / 'local-clouds', envvar=[constants.PYRROWHEAD_DIRECTORY])
+clouds_directory = typer.Argument(APP_DIR / 'local-clouds', envvar=[constants.ENV_PYRROWHEAD_DIRECTORY])
 
 @contextmanager
 def switch_directory(path: Path):

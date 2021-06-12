@@ -46,6 +46,7 @@ def generate_config_files(cloud_config, target_path):
                 **config,
                 system_cn=system_cn,
                 cloud_name=cloud_config["cloud_name"],
+                organization_name=cloud_config["organization_name"],
                 password=db_passwords[system],
                 sr_address=sr_address,
                 sr_port=sr_port,
@@ -73,25 +74,26 @@ def generate_certgen(cloud_config, target_path):
         target_file.write(certgen_content)
 
 def generate_docker_compose_file(cloud_config, target_path):
+    cloud_identifier = f'{cloud_config["cloud_name"]}.{cloud_config["organization_name"]}'
     docker_compose_content = OrderedDict({
         'version': '3',
         'services': OrderedDict({
-            f'mysql.{cloud_config["cloud_name"]}': {
-                'container_name': f'mysql.{cloud_config["cloud_name"]}',
+            f'mysql.{cloud_identifier}': {
+                'container_name': f'mysql.{cloud_identifier}',
                 'image': 'mysql:5.7',
                 'environment': ['MYSQL_ROOT_PASSWORD=123456'],
-                'volumes': [f'mysql.{cloud_config["cloud_name"]}:/var/lib/mysql', './sql:/docker-entrypoint-initdb.d/'],
-                'networks': {'default': {'ipv4_address': str(ipaddress.ip_network(cloud_config["subnet"])[2])}},
+                'volumes': [f'mysql.{cloud_identifier}:/var/lib/mysql', './sql:/docker-entrypoint-initdb.d/'],
+                'networks': {cloud_identifier: {'ipv4_address': str(ipaddress.ip_network(cloud_config["subnet"])[2])}},
                 'ports': ['3306:3306'],
             },
         }),
         'volumes': {
-            f'mysql.{cloud_config["cloud_name"]}': {
+            f'mysql.{cloud_identifier}': {
                 'external': True
             }
         },
         'networks': {
-            'default': {
+            f'{cloud_identifier}': {
                 'ipam': {
                     'config': [{"subnet": cloud_config["subnet"]}]
                 }
@@ -103,15 +105,15 @@ def generate_docker_compose_file(cloud_config, target_path):
         core_name = config['domain']
         cloud_name = cloud_config["cloud_name"]
         docker_compose_content['services'][core_name] = {
-            'container_name': f'{core_name}.{cloud_config["cloud_name"]}',
+            'container_name': f'{core_name}.{cloud_identifier}',
             'image': f'svetlint/{core_name}:4.3.0',
-            'depends_on': [f'mysql.{cloud_name}'],
+            'depends_on': [f'mysql.{cloud_identifier}'],
             'volumes': [
                 f'./core_system_config/{core_system}.properties:/{core_name}/application.properties',
                 f'./cloud-{cloud_name}/crypto/{core_system}.p12:/{core_name}/{core_system}.p12',
                 f'./cloud-{cloud_name}/crypto/truststore.p12:/{core_name}/truststore.p12',
             ],
-            'networks': {'default': {'ipv4_address': config["address"]}},
+            'networks': {cloud_identifier: {'ipv4_address': config["address"]}},
             'ports': [f'{config["port"]}:{config["port"]}'],
         }
 

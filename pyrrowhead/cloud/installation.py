@@ -26,7 +26,7 @@ def install_cloud(config_file_path, installation_target):
 
     with rich_console.status(Text('Installing an Arrowhead local cloud...')):
         generate_all_files(cloud_config, config_file_path, installation_target)
-        initialize_cloud(installation_target, cloud_config["cloud_name"])
+        initialize_cloud(installation_target, cloud_config["cloud_name"], cloud_config["organization_name"])
     rich_console.print("Finished installing the [blue]Arrowhead[/blue] local cloud!")
 
 
