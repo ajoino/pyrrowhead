@@ -4,8 +4,8 @@ from typing import Union, List, Dict
 import yaml
 import requests
 
-def get_ssl_files(cert_dir: Path):
-    if (cloud_path := cert_dir / 'cloud_config.yaml').exists():
+def get_ssl_files(cloud_directory: Path):
+    if (cloud_path := cloud_directory / 'cloud_config.yaml').exists():
         with open(cloud_path) as cloud_file:
             cloud_config = yaml.safe_load(cloud_file)
         cloud_name = cloud_config["cloud"]["cloud_name"]
@@ -16,25 +16,25 @@ def get_ssl_files(cert_dir: Path):
         cert_subpath = 'sysop.crt'
         key_subpath = 'sysop.key'
         ca_subpath = 'sysop.ca'
-    return (
-        cert_subpath, key_subpath, ca_subpath
+    return (cloud_directory / subpath for subpath in
+        (cert_subpath, key_subpath, ca_subpath)
     )
 
 def get_service(
         url: str,
-        cert_dir: Path,
+        cloud_directory: Path,
 ):
-    *certkey, ca_path = get_ssl_files(cert_dir)
+    *certkey, ca_path = get_ssl_files(cloud_directory)
     resp = requests.get(url, cert=certkey, verify=ca_path)
     return resp
 
 def post_service(
         url: str,
-        cert_dir: Path,
+        cloud_directory: Path,
         json: Union[Dict, List] = None,
         text: str = ''
 ):
-    *certkey, ca_path = get_ssl_files(cert_dir)
+    *certkey, ca_path = get_ssl_files(cloud_directory)
     if json:
         resp = requests.post(url, json=json, cert=certkey, verify=ca_path)
     else:
@@ -43,9 +43,9 @@ def post_service(
 
 def delete_service(
         url: str,
-        cert_dir: Path,
+        cloud_directory: Path,
 ):
-    *certkey, ca_path = get_ssl_files(cert_dir)
+    *certkey, ca_path = get_ssl_files(cloud_directory)
 
     resp = requests.delete(url, cert=certkey, verify=ca_path)
     return resp

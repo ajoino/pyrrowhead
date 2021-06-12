@@ -12,6 +12,7 @@ from rich.table import Table, Column
 from pyrrowhead.management.common import CoreSystemAddress, CoreSystemPort, CertDirectory
 from pyrrowhead.management.utils import get_service, post_service, delete_service
 from pyrrowhead import rich_console
+from pyrrowhead.utils import get_core_system_address_and_port, get_active_cloud_directory
 
 SRPort = CoreSystemPort(8443)
 
@@ -26,10 +27,12 @@ def services(
         show_access_policy: bool = typer.Option(False, '--show-access-policy', '-c', show_default=False),
         show_service_uri: bool = typer.Option(False, '--show-service-uri', '-u', show_default=False),
         raw_output: bool = typer.Option(False, '--raw-output', '-r', show_default=False),
-        address: str = CoreSystemAddress,
-        port: int = CoreSystemPort(8443),
-        cert_dir: Path = CertDirectory,
 ):
+    active_cloud_directory = get_active_cloud_directory()
+    address, port = get_core_system_address_and_port(
+            'service_registry',
+            active_cloud_directory,
+    )
     list_services(
             service_definition,
             id,
@@ -40,7 +43,7 @@ def services(
             raw_output,
             address,
             port,
-            cert_dir
+            active_cloud_directory,
     )
 
 class AccessPolicy(str, Enum):
@@ -117,7 +120,7 @@ def list_services(
         raw_output: bool,
         address: Optional[str],
         port: Optional[int],
-        cert_dir: Optional[Path]
+        cloud_dir: Optional[Path]
 ):
     if id and all:
         rich_console.print(Text("--id and --all/-A are mutually exclusive options"))
@@ -125,17 +128,17 @@ def list_services(
     if service_definition:
         resp = get_service(
                 f'https://{address}:{port}/serviceregistry/mgmt/servicedef/{service_definition}',
-                cert_dir,
+                cloud_dir,
         )
     elif id is not None:
         resp = get_service(
                 f'https://{address}:{port}/serviceregistry/mgmt/{id}',
-                cert_dir,
+                cloud_dir,
         )
     elif all is not None:
         resp = get_service(
                 f'https://{address}:{port}/serviceregistry/mgmt/',
-                cert_dir,
+                cloud_dir,
         )
     else:
         raise typer.Exit()
