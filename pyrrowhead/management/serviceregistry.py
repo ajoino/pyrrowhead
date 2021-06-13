@@ -1,6 +1,6 @@
 from enum import Enum
 from pathlib import Path
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Dict
 import json
 
 import typer
@@ -20,9 +20,9 @@ sr_app = typer.Typer(name='services')
 
 @sr_app.command(name='list')
 def services(
-        service_definition: Optional[str] = typer.Argument('', show_default=False),
-        id: Optional[int] = None,
-        all: bool = typer.Option(None, '--all', '-A'),
+        service_definition: Optional[str] = typer.Option(None, show_default=False),
+        system_name: Optional[str] = typer.Option(None, show_default=False),
+        system_id: Optional[int] = typer.Option(None, show_default=False),
         show_provider: bool = typer.Option(None, '--show-provider', '-s'),
         show_access_policy: bool = typer.Option(False, '--show-access-policy', '-c', show_default=False),
         show_service_uri: bool = typer.Option(False, '--show-service-uri', '-u', show_default=False),
@@ -33,18 +33,25 @@ def services(
             'service_registry',
             active_cloud_directory,
     )
-    list_services(
+
+    list_data = list_services(
             service_definition,
-            id,
-            all,
-            show_provider,
-            show_access_policy,
-            show_service_uri,
-            raw_output,
+            system_name,
+            system_id,
             address,
             port,
             active_cloud_directory,
     )
+
+    if raw_output:
+        print(json.dumps(list_data))
+        # TODO: return resp.json()?
+        raise typer.Exit()
+
+    service_table = create_service_table(list_data, show_provider, show_access_policy, show_service_uri)
+
+    rich_console.print(service_table)
+
 
 class AccessPolicy(str, Enum):
     UNRESTRICTED = 'NOT_SECURE'
@@ -112,49 +119,42 @@ def remove_service(
 
 def list_services(
         service_definition: Optional[str],
-        id: Optional[int],
-        all: bool,
-        show_system: bool,
-        show_access_policy: bool,
-        show_service_uri: bool,
-        raw_output: bool,
+        system_name: Optional[str],
+        system_id: Optional[int],
         address: Optional[str],
         port: Optional[int],
         cloud_dir: Optional[Path]
-):
-    if id and all:
-        rich_console.print(Text("--id and --all/-A are mutually exclusive options"))
-        raise typer.Exit()
+) -> Dict:
+    exclusive_options = (service_definition, system_name, system_id)
+    if len(list(option for option in exclusive_options if option is not None)) > 1:
+        raise RuntimeError('Only one of the options <--service-definition, --system-name, --system-id> may be used.')
     if service_definition:
         resp = get_service(
-                f'https://{address}:{port}/serviceregistry/mgmt/servicedef/{service_definition}',
+                f'https://{address}:{port}/serviceregistry/mgmt/serviceDef/{service_definition}',
                 cloud_dir,
         )
-    elif id is not None:
-        resp = get_service(
-                f'https://{address}:{port}/serviceregistry/mgmt/{id}',
-                cloud_dir,
-        )
-    elif all is not None:
+        response_data = resp.json()
+    else:
         resp = get_service(
                 f'https://{address}:{port}/serviceregistry/mgmt/',
                 cloud_dir,
         )
-    else:
-        raise typer.Exit()
-    if raw_output:
-        print(resp.text)
-        # TODO: return resp.json()?
-        raise typer.Exit()
+        if any((system_name, system_id)):
+            response_data = {
+                "data":
+                    [
+                        service for service in resp.json()["data"]
+                        if (system_name == service["provider"]["systemName"]
+                        or system_id == service["provider"]["id"])
+                    ]
+            }
+        else:
+            response_data = resp.json()
 
-    service_table = create_service_table(resp, show_system, show_access_policy, show_service_uri, id=(id is not None))
-
-    rich_console.print(service_table)
+    return response_data
 
 
-def create_service_table(response, show_system, show_access_policy, show_service_uri, id) -> Table:
-    json_data = response.json()
-
+def create_service_table(response_data: Dict, show_system, show_access_policy, show_service_uri) -> Table:
     service_table = Table(
             Column(header='id', style='red'),
             Column(header='Service definition'),
@@ -180,10 +180,8 @@ def create_service_table(response, show_system, show_access_policy, show_service
         )
 
     # Returned data is formatted differently if service registry is queried by id
-    if id:
-        json_data = {"data": [json_data]}
 
-    for service in json_data["data"]:
+    for service in response_data["data"]:
         row_data = [
             str(service['id']),
             service['serviceDefinition']['serviceDefinition'],
