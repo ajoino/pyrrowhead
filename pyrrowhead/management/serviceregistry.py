@@ -5,9 +5,13 @@ import json
 
 import typer
 from rich import box
+from rich.panel import Panel
 from rich.syntax import Syntax
 from rich.text import Text
 from rich.table import Table, Column
+from rich.console import RenderGroup
+from rich.rule import Rule
+from rich.bar import Bar
 
 from pyrrowhead.management.common import CoreSystemAddress, CoreSystemPort, CertDirectory
 from pyrrowhead.management.utils import get_service, post_service, delete_service
@@ -18,40 +22,105 @@ SRPort = CoreSystemPort(8443)
 
 sr_app = typer.Typer(name='services')
 
+
 @sr_app.command(name='list')
 def services(
-        service_definition: Optional[str] = typer.Option(None, show_default=False),
-        system_name: Optional[str] = typer.Option(None, show_default=False),
-        system_id: Optional[int] = typer.Option(None, show_default=False),
-        show_provider: bool = typer.Option(None, '--show-provider', '-s'),
-        show_access_policy: bool = typer.Option(False, '--show-access-policy', '-c', show_default=False),
-        show_service_uri: bool = typer.Option(False, '--show-service-uri', '-u', show_default=False),
-        raw_output: bool = typer.Option(False, '--raw-output', '-r', show_default=False),
+        service_definition: Optional[str] = typer.Option(None, show_default=False, metavar='SERVICE_DEFINITION',
+                                                         help='Filter services by SERVICE_DEFINITION'),
+        system_name: Optional[str] = typer.Option(None, show_default=False, metavar='SYSTEM_NAME',
+                                                  help='Filter services by SYSTEM_NAME'),
+        system_id: Optional[int] = typer.Option(None, show_default=False, metavar='SYSTEM_ID',
+                                                help='Filter services by SYSTEM_ID'),
+        show_service_uri: bool = typer.Option(False, '--show-service-uri', '-u', show_default=False,
+                                              help='Show service uri'),
+        show_access_policy: bool = typer.Option(False, '--show-access-policy', '-c', show_default=False,
+                                                help='Show access policy'),
+        show_provider: bool = typer.Option(None, '--show-provider', '-s', help='Show provider system'),
+        raw_output: bool = typer.Option(False, '--raw-output', '-r', show_default=False,
+                                        help='Show information as json'),
+        indent: Optional[int] = typer.Option(None, '--raw-indent', metavar='NUM_SPACES',
+                                             help='Print json with NUM_SPACES spaces of indentation')
 ):
+    """
+    List services registered in the active local cloud, sorted by id. Services shown can
+    be filtered by service definition or system. More information about the
+    services can be seen with the -usc flags. The raw json data is accessed by the -r flag.
+    """
     active_cloud_directory = get_active_cloud_directory()
     address, port = get_core_system_address_and_port(
             'service_registry',
             active_cloud_directory,
     )
 
-    list_data = list_services(
-            service_definition,
-            system_name,
-            system_id,
-            address,
-            port,
-            active_cloud_directory,
-    )
+    try:
+        list_data = list_services(
+                service_definition,
+                system_name,
+                system_id,
+                address,
+                port,
+                active_cloud_directory,
+        )
+    except RuntimeError as e:
+        rich_console.print(e)
+        raise typer.Exit(code=-1)
 
     if raw_output:
-        print(json.dumps(list_data))
-        # TODO: return resp.json()?
+        rich_console.print(Syntax(json.dumps(list_data, indent=indent), 'json'))
         raise typer.Exit()
 
     service_table = create_service_table(list_data, show_provider, show_access_policy, show_service_uri)
 
     rich_console.print(service_table)
 
+
+@sr_app.command(name='inspect')
+def inspect_service(
+        service_id: int,
+        raw_output: Optional[bool] = None,
+        indent: Optional[int] = None,
+):
+    """
+    Show all information regarding specific service.
+    """
+    active_cloud_directory = get_active_cloud_directory()
+    address, port = get_core_system_address_and_port(
+            'service_registry',
+            active_cloud_directory,
+    )
+
+    response_data = get_service(
+            f'https://{address}:{port}/serviceregistry/mgmt/{service_id}',
+            active_cloud_directory,
+    ).json()
+
+    if raw_output:
+        rich_console.print(Syntax(json.dumps(response_data, indent=indent), 'json'))
+        raise typer.Exit()
+
+    tab_break = "\n\t"
+    provider = response_data["provider"]
+    render_group = RenderGroup(
+            (f'Service URI: {response_data["serviceUri"]}'),
+            (f'Interfaces: [bright_yellow]\n\t{tab_break.join(interface["interfaceName"] for interface in response_data["interfaces"])}[/bright_yellow]'),
+            (f'Access policy: [orange3]{response_data["secure"]}[/orange3]'),
+            (f'Version: {response_data["version"]}'),
+            (
+                    f'Provider:'
+                    f'{tab_break}Id: {provider["id"]}'
+                    f'{tab_break}System name: [blue]{provider["systemName"]}[/blue]'
+                    f'{tab_break}Address: {provider["address"]}'
+                    f'{tab_break}Port: {provider["port"]}'
+            ),
+            # TODO: "Always valid" should be printed in green and not red
+            ( f'End of validity: [red]{response_data.get("endOfValidity", "[green]Always valid[/green]")}[/red]'),
+    )
+    if (metadata := response_data.get("metadata")):
+        render_group.renderables.append(f'Metadata: {tab_break} {tab_break.join(f"{name}: {value}" for name, value in metadata.items())}')
+    rich_console.print(
+            (f' Service "{response_data["serviceDefinition"]["serviceDefinition"]}" (id: {service_id})'),
+            Panel(render_group, box=box.HORIZONTALS, expand=False)
+    )
 
 class AccessPolicy(str, Enum):
     UNRESTRICTED = 'NOT_SECURE'
@@ -65,14 +134,17 @@ def add_service(
         uri: str,
         interface: str,
         access_policy: AccessPolicy = typer.Argument(AccessPolicy.CERTIFICATE),
-        system: Tuple[str, str, int] = typer.Option((None, None, None), show_default=False),
-        sr_address: str = '127.0.0.1',
-        sr_port: int = 8443,
-        cert_dir: Path = CertDirectory,
-        #system_id: Optional[int] = None,
+        system: Optional[Tuple[str, str, int]] = typer.Option((None, None, None), show_default=False),
+        system_id: Optional[int] = None,
 ):
+    active_cloud_directory = get_active_cloud_directory()
+    address, port = get_core_system_address_and_port(
+            'service_registry',
+            active_cloud_directory,
+    )
+
     # TODO: Implement system_id
-    if any(system) and False:
+    if all((system, system_id)):
         rich_console.print('system and system-id are mutually exclusive options.')
         raise typer.Exit()
 
@@ -86,18 +158,19 @@ def add_service(
         "providerSystem": {
             "systemName": system_name,
             "address": address,
-            "port":  port,
+            "port": port,
         }
     }
     resp = post_service(
-            f'https://{sr_address}:{sr_port}/serviceregistry/mgmt/',
-            cert_dir,
+            f'https://{address}:{port}/serviceregistry/mgmt/',
+            active_cloud_directory,
             json=registry_request,
     )
 
     # Add service code
     if resp.status_code in {400, 401, 500}:
         rich_console.print(Text(f'Service registration failed: {resp.json()["errorMessage"]}'))
+        raise typer.Exit(-1)
 
 
 @sr_app.command(name='remove')
@@ -114,7 +187,7 @@ def remove_service(
 
     if resp.status_code in {400, 401, 500}:
         rich_console.print(Text(f'Service unregistration failed: {resp.json()["errorMessage"]}'))
-
+        raise typer.Exit(-1)
 
 
 def list_services(
@@ -126,30 +199,25 @@ def list_services(
         cloud_dir: Optional[Path]
 ) -> Dict:
     exclusive_options = (service_definition, system_name, system_id)
+
     if len(list(option for option in exclusive_options if option is not None)) > 1:
         raise RuntimeError('Only one of the options <--service-definition, --system-name, --system-id> may be used.')
+
     if service_definition:
-        resp = get_service(
-                f'https://{address}:{port}/serviceregistry/mgmt/serviceDef/{service_definition}',
-                cloud_dir,
-        )
-        response_data = resp.json()
+        endpoint = f'https://{address}:{port}/serviceregistry/mgmt/serviceDef/{service_definition}'
     else:
-        resp = get_service(
-                f'https://{address}:{port}/serviceregistry/mgmt/',
-                cloud_dir,
-        )
-        if any((system_name, system_id)):
-            response_data = {
-                "data":
-                    [
-                        service for service in resp.json()["data"]
-                        if (system_name == service["provider"]["systemName"]
-                        or system_id == service["provider"]["id"])
-                    ]
-            }
-        else:
-            response_data = resp.json()
+        endpoint = f'https://{address}:{port}/serviceregistry/mgmt/'
+
+    response_data = get_service(endpoint, cloud_dir, ).json()
+
+    if any((system_name, system_id)):
+        response_data = {"data":
+            [
+                service for service in response_data["data"]
+                if (system_name == service["provider"]["systemName"]
+                    or system_id == service["provider"]["id"])
+            ]
+        }
 
     return response_data
 
