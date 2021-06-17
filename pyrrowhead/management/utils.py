@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Optional
 
 import yaml
 import requests
@@ -37,15 +37,18 @@ def post_service(
     *certkey, ca_path = get_ssl_files(cloud_directory)
     if json:
         resp = requests.post(url, json=json, cert=certkey, verify=ca_path)
-    else:
+    elif text:
         resp = requests.post(url, text=text, cert=certkey, verify=ca_path)
+    else:
+        resp = requests.post(url, cert=certkey, verify=ca_path)
     return resp
 
 def delete_service(
         url: str,
         cloud_directory: Path,
+        params: Optional[Dict[str, str]] = None,
 ):
     *certkey, ca_path = get_ssl_files(cloud_directory)
 
-    resp = requests.delete(url, cert=certkey, verify=ca_path)
+    resp = requests.delete(url, params=params, cert=certkey, verify=ca_path)
     return resp

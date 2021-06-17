@@ -16,7 +16,7 @@ class CloudConfiguration(str, Enum):
 
 
 def create_cloud_config(
-        target_directory,
+        target_directory: Path,
         cloud_name,
         organization_name,
         ssl_enabled,

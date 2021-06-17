@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from contextlib import contextmanager
 from typing import Tuple
+import configparser
 
 import typer
 import yaml
@@ -9,7 +10,19 @@ import yaml
 from pyrrowhead import constants
 from pyrrowhead.constants import APP_DIR, LOCAL_CLOUDS_SUBDIR, CLOUD_CONFIG_FILE_NAME
 
-clouds_directory = typer.Argument(APP_DIR / LOCAL_CLOUDS_SUBDIR, envvar=[constants.ENV_PYRROWHEAD_DIRECTORY])
+
+def get_local_cloud_directory(dir: str = '') -> str:
+    if dir:
+        return dir
+    config = configparser.ConfigParser()
+    with open(APP_DIR / 'config.cfg', 'r') as config_file:
+        config.read_file(config_file)
+
+    return config['pyrrowhead']['default-clouds-directory']
+
+
+clouds_directory = typer.Option(None, '--dir', callback=get_local_cloud_directory, envvar=[constants.ENV_PYRROWHEAD_DIRECTORY])
+
 
 @contextmanager
 def switch_directory(path: Path):
@@ -19,6 +32,7 @@ def switch_directory(path: Path):
         yield
     finally:
         os.chdir(origin)
+
 
 def set_active_cloud(cloud_identifier):
     with open(APP_DIR / 'active_cloud', "w") as active_cloud_file:
@@ -31,6 +45,7 @@ def get_active_cloud_directory() -> Path:
 
     return APP_DIR / LOCAL_CLOUDS_SUBDIR / org_name / cloud_name
 
+
 def get_core_system_address_and_port(core_system: str, cloud_directory: Path) -> Tuple[str, int]:
     with open(cloud_directory / CLOUD_CONFIG_FILE_NAME, 'r') as cloud_config_file:
         cloud_config = yaml.safe_load(cloud_config_file)
@@ -38,4 +53,3 @@ def get_core_system_address_and_port(core_system: str, cloud_directory: Path) ->
     port = cloud_config["cloud"]["core_systems"][core_system]["port"]
 
     return address, port
-
