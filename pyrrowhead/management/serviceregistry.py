@@ -144,8 +144,11 @@ def add_service(
     )
 
     # TODO: Implement system_id
-    if all((system, system_id)):
-        rich_console.print('system and system-id are mutually exclusive options.')
+    if all((all(system), system_id)):
+        rich_console.print('System and system-id are mutually exclusive options.')
+        raise typer.Exit()
+    elif not any((all(system), system_id)):
+        rich_console.print('One option of --system or --system-id must be set.')
         raise typer.Exit()
 
     system_name, address, port = system
@@ -161,11 +164,15 @@ def add_service(
             "port": port,
         }
     }
-    resp = post_service(
-            f'https://{address}:{port}/serviceregistry/mgmt/',
-            active_cloud_directory,
-            json=registry_request,
-    )
+    try:
+        resp = post_service(
+                f'https://{address}:{port}/serviceregistry/mgmt/',
+                active_cloud_directory,
+                json=registry_request,
+        )
+    except IOError as e:
+        rich_console.print(e)
+        raise typer.Exit(-1)
 
     # Add service code
     if resp.status_code in {400, 401, 500}:
