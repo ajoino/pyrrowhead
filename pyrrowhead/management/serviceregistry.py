@@ -196,6 +196,20 @@ def remove_service(
         rich_console.print(Text(f'Service unregistration failed: {resp.json()["errorMessage"]}'))
         raise typer.Exit(-1)
 
+def list_filter(
+        orch_rule: Dict,
+        service_definition: Optional[str],
+        system_name: Optional[str],
+        system_id: Optional[int],
+):
+    if service_definition is not None:
+        return orch_rule['serviceDefinition']['serviceDefinition'] == service_definition
+    elif system_name is not None:
+        return orch_rule['provider']['systemName'] == system_name
+    elif system_id is not None:
+        return orch_rule['provider']['id'] == system_id
+
+    return True
 
 def list_services(
         service_definition: Optional[str],
@@ -210,10 +224,7 @@ def list_services(
     if len(list(option for option in exclusive_options if option is not None)) > 1:
         raise RuntimeError('Only one of the options <--service-definition, --system-name, --system-id> may be used.')
 
-    if service_definition:
-        endpoint = f'https://{address}:{port}/serviceregistry/mgmt/serviceDef/{service_definition}'
-    else:
-        endpoint = f'https://{address}:{port}/serviceregistry/mgmt/'
+    endpoint = f'https://{address}:{port}/serviceregistry/mgmt/'
 
     response_data = get_service(endpoint, cloud_dir, ).json()
 
@@ -226,13 +237,16 @@ def list_services(
             ]
         }
 
+    response_data["data"] = [orch_rule for orch_rule in response_data["data"] if list_filter(
+            orch_rule, service_definition, system_name, system_id)]
+
     return response_data
 
 
 def create_service_table(response_data: Dict, show_system, show_access_policy, show_service_uri) -> Table:
     service_table = Table(
             Column(header='id', style='red'),
-            Column(header='Service definition'),
+            Column(header='Service definition', style='bright_blue'),
             Column(header='Interface', style='green'),
             title="Registered Services",
             box=box.SIMPLE,
@@ -253,8 +267,6 @@ def create_service_table(response_data: Dict, show_system, show_access_policy, s
                 header='System',
                 style='blue',
         )
-
-    # Returned data is formatted differently if service registry is queried by id
 
     for service in response_data["data"]:
         row_data = [

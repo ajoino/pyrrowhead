@@ -10,18 +10,33 @@ import yaml
 from pyrrowhead import constants
 from pyrrowhead.constants import APP_DIR, LOCAL_CLOUDS_SUBDIR, CLOUD_CONFIG_FILE_NAME
 
-
-def get_local_cloud_directory(dir: str = '') -> str:
-    if dir:
-        return dir
+def get_config() -> configparser.ConfigParser:
     config = configparser.ConfigParser()
     with open(APP_DIR / 'config.cfg', 'r') as config_file:
         config.read_file(config_file)
 
+    return config
+
+def set_config(config: configparser.ConfigParser) -> None:
+    with open(APP_DIR / 'config.cfg', 'w') as config_file:
+        config.write(config_file)
+
+def get_local_cloud_directory(dir: str = '') -> str:
+    if dir:
+        return dir
+
+    config = get_config()
+
     return config['pyrrowhead']['default-clouds-directory']
 
+def get_local_cloud(cloud_name: str):
+    config = get_config()
 
-clouds_directory = typer.Option(None, '--dir', callback=get_local_cloud_directory, envvar=[constants.ENV_PYRROWHEAD_DIRECTORY])
+    return config['pyrrowhead']['local-clouds']
+
+
+
+clouds_directory = typer.Option(None, '--dir', '-d', callback=get_local_cloud_directory, envvar=[constants.ENV_PYRROWHEAD_DIRECTORY])
 
 
 @contextmanager
@@ -35,15 +50,20 @@ def switch_directory(path: Path):
 
 
 def set_active_cloud(cloud_identifier):
-    with open(APP_DIR / 'active_cloud', "w") as active_cloud_file:
-        active_cloud_file.write(cloud_identifier)
+    config = get_config()
 
+    config['pyrrowhead']['active-cloud'] = cloud_identifier
+
+    set_config(config)
 
 def get_active_cloud_directory() -> Path:
-    with open(APP_DIR / 'active_cloud', "r") as active_cloud_file:
-        cloud_name, org_name = active_cloud_file.read().split('.')
+    config = get_config()
 
-    return APP_DIR / LOCAL_CLOUDS_SUBDIR / org_name / cloud_name
+    active_cloud_identifier = config['pyrrowhead']['active-cloud']
+
+    active_cloud_directory = config['local-clouds'][active_cloud_identifier]
+
+    return Path(active_cloud_directory)
 
 
 def get_core_system_address_and_port(core_system: str, cloud_directory: Path) -> Tuple[str, int]:

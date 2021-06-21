@@ -5,7 +5,7 @@
 Unreleased
 
  - System query is now supported when the System registry is present.
- - Service query supports the `--show-service-uri/-u` flag.
- - Services can be inspected to get more information. 
+ - Services can be inspected to get more information.
+ - Orchestration and authorization rules can be listed, added and removed in the same way services can. 
  - Setup and installation now set up the docker subnetwork and container ip addresses.
- - Setup, installation, and running will now default to installing local clouds in `~/.config/pyrrowhead/local-clouds`, but this can be overridden if another install location is desired.
+ - Upon installation, the user will be asked where to install Arrowhead local clouds by default.

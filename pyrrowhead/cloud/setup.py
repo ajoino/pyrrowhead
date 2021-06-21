@@ -7,6 +7,7 @@ import yaml
 import yamlloader
 
 from pyrrowhead.cloud.installation import install_cloud
+from pyrrowhead.utils import get_config, set_config
 
 
 class CloudConfiguration(str, Enum):
@@ -17,6 +18,7 @@ class CloudConfiguration(str, Enum):
 
 def create_cloud_config(
         target_directory: Path,
+        cloud_identifier,
         cloud_name,
         organization_name,
         ssl_enabled,
@@ -122,6 +124,11 @@ def create_cloud_config(
 
     with open(target_directory / 'cloud_config.yaml', 'w', ) as yaml_file:
         yaml.dump(cloud_config, yaml_file, Dumper=yamlloader.ordereddict.CSafeDumper)
+
+    config = get_config()
+    config['local-clouds'][cloud_identifier] = str(target_directory)
+
+    set_config(config)
 
     if do_install:
         install_cloud(target_directory / 'cloud_config.yaml', target_directory)

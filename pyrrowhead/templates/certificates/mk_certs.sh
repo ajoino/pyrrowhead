@@ -30,11 +30,11 @@ create_consumer_system_keystore() {
 
 {% if client_systems != None %}
 {% for system, config in client_systems.items() %}
-create_consumer_system_keystore "{{ system }}" "ip:{{ config['address'] }}"
+create_consumer_system_keystore "{{ system['system_name'] }}" "ip:{{ config['address'] }}"
 {% endfor %}
 {% endif %}
 {% for system, config in core_systems.items() %}
-create_consumer_system_keystore "{{ system }}" "ip:{{ config['address'] }}"
+create_consumer_system_keystore "{{ system['system_name'] }}" "ip:{{ config['address'] }}"
 {% endfor %}
 
 create_sysop_keystore \
