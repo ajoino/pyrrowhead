@@ -1,7 +1,5 @@
 from pathlib import Path
 from typing import Optional, List, Tuple
-import os
-import subprocess
 
 import typer
 
@@ -16,7 +14,6 @@ from pyrrowhead.utils import (
     switch_directory,
     set_active_cloud as set_active_cloud_func, get_config
 )
-from pyrrowhead.constants import ENV_PYRROWHEAD_ACTIVE_CLOUD
 
 
 cloud_app = typer.Typer(name='cloud')
@@ -127,7 +124,7 @@ def setup(
         organization_name: Optional[str] = typer.Option(None, '--org', '-o'),
         installation_target: Path = clouds_directory,
         ip_network: str = typer.Option('172.16.1.0/24'),
-        ssl_enabled: bool = typer.Option(True, '--ssl-enabled'),
+        ssl_enabled: Optional[bool] = typer.Option(None, '--ssl-enabled/--ssl-disabled'),
         do_install: bool = typer.Option(False, '--install'),
         include: Optional[List[CloudConfiguration]] = typer.Option('', case_sensitive=False),
 ):

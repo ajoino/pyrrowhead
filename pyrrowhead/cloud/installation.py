@@ -9,7 +9,7 @@ from rich.text import Text
 from pyrrowhead.cloud.file_generators import generate_all_files
 from pyrrowhead.cloud.initialize_cloud import initialize_cloud
 from pyrrowhead import rich_console
-
+from pyrrowhead.utils import get_config, set_config
 
 
 def install_cloud(config_file_path, installation_target):
@@ -39,23 +39,25 @@ def uninstall_cloud(installation_target, complete=False, keep_root=False, keep_s
         cloud_config = yaml.load(config_file, Loader=yamlloader.ordereddict.CSafeLoader)["cloud"]
 
     cloud_name = cloud_config["cloud_name"]
+    org_name = cloud_config["organization_name"]
 
     if complete:
-        shutil.rmtree(installation_target)
+        #shutil.rmtree(installation_target)
+        config = get_config()
+
+        del config["local-clouds"][f'{cloud_name}.{org_name}']
+        set_config(config)
     else:
-        shutil.rmtree(installation_target / 'certgen')
         if not keep_sysop:
             shutil.rmtree(installation_target / f'cloud-{cloud_name}')
         else:
             # TODO: Code that deletes everything except the sysop.* files
             pass
-        if not keep_root:
-            shutil.rmtree(installation_target / 'cloud-root')
         shutil.rmtree(installation_target / 'core_system_config')
         shutil.rmtree(installation_target / 'sql')
         (installation_target / 'docker-compose.yml').unlink()
         (installation_target / 'initSQL.sh').unlink()
-    subprocess.run(['docker', 'volume', 'rm', f'mysql.{cloud_name}'])
-    typer.Exit('Uninstallation complete')
+    subprocess.run(['docker', 'volume', 'rm', f'mysql.{cloud_name}.{org_name}'])
+    raise typer.Exit('Uninstallation complete')
 
 

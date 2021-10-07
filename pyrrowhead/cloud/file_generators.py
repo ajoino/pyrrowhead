@@ -123,8 +123,6 @@ def generate_docker_compose_file(cloud_config, target_path):
 def generate_all_files(cloud_config, yaml_path, target_path):
     generate_config_files(cloud_config, target_path)
     rich_console.print(Text('Generated core system configuration files.'))
-    generate_certgen(cloud_config, target_path)
-    rich_console.print(Text('Generated certificate generation files.'))
     generate_docker_compose_file(cloud_config, target_path)
     rich_console.print(Text('Generated docker-compose.yml.'))
     # Copy files that need not be generated
@@ -139,7 +137,4 @@ def generate_all_files(cloud_config, yaml_path, target_path):
         shutil.copy(yaml_path.absolute(), target_path)
     except shutil.SameFileError:
         pass
-    # Make mk_certs.sh executable
-    mk_cert_path = target_path / 'certgen/mk_certs.sh'
-    os.chmod(mk_cert_path, os.stat(mk_cert_path).st_mode | stat.S_IEXEC)
     rich_console.print(Text('Copied files.'))

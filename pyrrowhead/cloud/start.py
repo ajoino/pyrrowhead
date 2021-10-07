@@ -15,10 +15,13 @@ from pyrrowhead.utils import switch_directory
 
 def check_server(address, port, secure, certfile, keyfile, cafile):
     if secure:
-        context = ssl.create_default_context(cafile=cafile)
+        context = ssl.create_default_context(cafile=cafile.absolute())
         context.verify_mode = ssl.CERT_REQUIRED
         context.check_hostname = False
-        context.load_cert_chain(certfile, keyfile)
+        try:
+            context.load_cert_chain(certfile, keyfile)
+        except OSError:
+            raise typer.Abort()
         try:
             with socket.create_connection((address, port)) as sock:
                 with context.wrap_socket(sock, server_hostname=address):
@@ -47,7 +50,7 @@ def check_returncode(output, status, cloud_directory: Path = Path.cwd()):
         status.update(Text('Stopping local cloud...'))
         stop_local_cloud(cloud_directory)
         rich_console.print(Text('Local cloud Stopped.'))
-        raise typer.Exit()
+        raise typer.Abort()
 
 
 def start_local_cloud(cloud_directory: Path):
@@ -57,10 +60,9 @@ def start_local_cloud(cloud_directory: Path):
     org_name = cloud_config["cloud"]["organization_name"]
     ssl_enabled = cloud_config["cloud"]["ssl_enabled"]
 
-    sysop_certfile = cloud_directory / f'cloud-{cloud_name}/crypto/sysop.crt'
-    sysop_keyfile = cloud_directory / f'cloud-{cloud_name}/crypto/sysop.key'
-    sysop_cafile = cloud_directory / f'cloud-{cloud_name}/crypto/sysop.ca'
-
+    sysop_certfile = (cloud_directory / f'cloud-{cloud_name}/crypto/sysop.crt').absolute()
+    sysop_keyfile = (cloud_directory / f'cloud-{cloud_name}/crypto/sysop.key').absolute()
+    sysop_cafile = (cloud_directory / f'cloud-{cloud_name}/crypto/sysop.ca').absolute()
     core_systems = cloud_config["cloud"]["core_systems"]
 
     with switch_directory(cloud_directory):
