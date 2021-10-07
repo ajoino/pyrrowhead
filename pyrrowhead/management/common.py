@@ -1,3 +1,4 @@
+from enum import Enum
 from pathlib import Path
 
 import typer
@@ -12,3 +13,8 @@ def CoreSystemPort(port: int):
 
 CertDirectory = typer.Option(Path('.'), '--cert-dir')
 
+
+class AccessPolicy(str, Enum):
+    UNRESTRICTED = 'NOT_SECURE'
+    CERTIFICATE = 'CERTIFICATE'
+    TOKEN = 'TOKEN'

@@ -1,8 +1,19 @@
+import functools
 from pathlib import Path
-from typing import Union, List, Dict, Optional
+from typing import Union, List, Dict, Optional, Callable, Tuple
 
 import yaml
 import requests
+
+def extract_json_and_status(func: Callable[[...], requests.Response]):
+    @functools.wraps
+    def wrapper(*args, **kwargs) -> Tuple[Dict, int]:
+        resp = func(*args, **kwargs)
+
+        return resp.json(), resp.status_code
+
+    return wrapper
+
 
 def get_ssl_files(cloud_directory: Path):
     if (cloud_path := cloud_directory / 'cloud_config.yaml').exists():
