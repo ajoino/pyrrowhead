@@ -1,17 +1,11 @@
-from pathlib import Path
 from typing import Optional, Tuple, Dict
 
-import typer
 from rich import box
-from rich.text import Text
 from rich.table import Table, Column
 
-from pyrrowhead.management.common import CoreSystemPort, AccessPolicy
+from pyrrowhead.management.common import AccessPolicy
 from pyrrowhead.management.utils import get_service, post_service, delete_service as del_service
-from pyrrowhead import rich_console
 from pyrrowhead.utils import get_core_system_address_and_port, get_active_cloud_directory
-
-SRPort = CoreSystemPort(8443)
 
 
 def inspect_service(service_id: int):
@@ -115,10 +109,12 @@ def delete_service(service_id: int):
             active_cloud_directory,
     )
 
-    resp = del_service(
+    response = del_service(
             f'https://{address}:{port}/serviceregistry/mgmt/{id}',
             active_cloud_directory,
     )
+
+    return response.json(), response.status_code
 
 
 def create_service_table(response_data: Dict, show_system, show_access_policy, show_service_uri) -> Table:
@@ -162,3 +158,45 @@ def create_service_table(response_data: Dict, show_system, show_access_policy, s
         service_table.add_row(*row_data)
 
     return service_table
+
+
+def grouped_services():
+    active_cloud_directory = get_active_cloud_directory()
+    address, port, secure, scheme = get_core_system_address_and_port(
+            'service_registry',
+            active_cloud_directory,
+    )
+    response = get_service(
+            f'{scheme}://{address}:{port}/serviceregistry/mgmt/grouped',
+            active_cloud_directory,
+    )
+    return response.json(), response.status_code
+
+
+def get_system_id_from_name(system_name: str, address: str = '', port: int = -1) -> int:
+    active_cloud_directory = get_active_cloud_directory()
+    sr_address, sr_port, secure, scheme = get_core_system_address_and_port(
+            'service_registry',
+            active_cloud_directory,
+    )
+
+    scheme = 'https' if secure else 'http'
+    response_data = get_service(
+            f'{scheme}://{sr_address}:{sr_port}/serviceregistry/mgmt/systems',
+            active_cloud_directory,
+    ).json()
+
+    candidate_systems = [system for system in response_data["data"] if system["systemName"] == system_name]
+
+    if len(address) > 0 and port >= 0:
+        candidate_systems = [
+            system for system in candidate_systems
+            if system["address"] == address and system["port"] == port
+        ]
+
+    if len(candidate_systems) == 0:
+        return -1
+    elif len(candidate_systems) > 1:
+        return -2
+
+    return candidate_systems[0]["id"]

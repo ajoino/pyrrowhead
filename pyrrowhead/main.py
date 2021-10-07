@@ -1,9 +1,6 @@
 import typer
 
-from pyrrowhead.management.authorization import auth_app
-from pyrrowhead.management.orchestrator import orch_app
-from pyrrowhead.management.cli import sr_app
-from pyrrowhead.management.systemregistry import sys_app
+from pyrrowhead.management.cli import sr_app, orch_app, auth_app, sys_app
 from pyrrowhead.cloud.main import cloud_app
 
 app = typer.Typer()

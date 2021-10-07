@@ -1,17 +1,16 @@
-import json
 from enum import Enum
-from typing import Optional, Tuple, Dict, Any
+from typing import Optional, Tuple, Dict
 
 import typer
 from rich import box
-from rich.syntax import Syntax
 from rich.table import Table, Column
 
 from pyrrowhead import rich_console
+from pyrrowhead.management.serviceregistry import grouped_services
 from pyrrowhead.management.utils import get_service, post_service, delete_service
+from pyrrowhead.management.authorization import add_authorization_rule
 from pyrrowhead.utils import get_core_system_address_and_port, get_active_cloud_directory
 
-orch_app = typer.Typer(name='orchestration')
 
 class SortbyChoices(str, Enum):
     RULE_ID = 'id'
@@ -19,6 +18,62 @@ class SortbyChoices(str, Enum):
     CONSUMER = 'consumer'
     PROVIDER = 'provider'
     SERVICE = 'service'
+
+def get_ids_from_service_definition(
+        service_definition: str,
+        interface_name: str,
+        provider_name: str,
+        address: str,
+        port: int
+) -> Tuple[int, int, int]:
+    """
+    Args:
+        service_definition:
+        interface_name:
+        provider_name:
+        address:
+        port:
+
+    Returns:
+        Tuple of service definition id, interface id, and provider id
+    """
+    response_data, status = grouped_services()
+
+    services_by_definition = response_data.get("servicesGroupedByServiceDefinition")
+    for service_definition_entry in services_by_definition:
+        if service_definition_entry["serviceDefinition"] == service_definition:
+            for service in service_definition_entry["providerServices"]:
+                if service["provider"]["systemName"] == provider_name and service["provider"]["address"] == address and service["provider"]["port"] == port:
+                    correct_service = service
+                    break
+            else:
+                rich_console.print(
+                        f'Could not find provider {provider_name}@{address}:{port} for '
+                        f'any service with service definition {service_definition}.'
+                )
+                raise typer.Exit()
+            break
+    else:
+        rich_console.print(
+                f'Could not find any services with service definition {service_definition}.'
+        )
+        raise typer.Exit()
+    service_definition_id = correct_service["serviceDefinition"]["id"]
+    provider_id = correct_service["provider"]["id"]
+    interfaces = correct_service["interfaces"]
+    for interface in interfaces:
+        if interface["interfaceName"] == interface_name:
+            interface_id = interface["id"]
+            break
+    else:
+        rich_console.print(
+                f'Could not find interface {interface_name} for service '
+                f'{service_definition} in provider {provider_name}@{address}:{port}, '
+                f'available interfaces are {", ".join(interface["interfaceName"] for interface in interfaces)}'
+        )
+        raise typer.Exit()
+    return service_definition_id, interface_id, provider_id
+
 
 def table_sort(rule, choice):
     if choice == SortbyChoices.RULE_ID:
@@ -98,58 +153,31 @@ def create_orchestration_table(
     return table
 
 
-
-@orch_app.command(name='list')
-def list_orchestration_rules(
-        service_definition: Optional[str] = typer.Option(None, metavar='SERVICE_DEFINITION'),
-        provider_id: Optional[int] = typer.Option(None),
-        provider_name: Optional[str] = typer.Option(None),
-        consumer_id: Optional[int] = typer.Option(None),
-        consumer_name: Optional[str] = typer.Option(None),
-        sort_by: SortbyChoices = typer.Option('id'),
-        raw_output: bool = typer.Option(False),
-        raw_indent: Optional[int] = typer.Option(None),
-):
+def list_orchestration_rules():
     active_cloud_directory = get_active_cloud_directory()
-    address, port = get_core_system_address_and_port(
+    address, port, secure, scheme = get_core_system_address_and_port(
             'orchestrator',
             active_cloud_directory,
     )
-
-    response_data = get_service(
-            f'https://{address}:{port}/orchestrator/mgmt/store',
+    scheme = 'https' if secure else 'http'
+    response= get_service(
+            f'{scheme}://{address}:{port}/orchestrator/mgmt/store',
             active_cloud_directory,
-    ).json()
-
-    if raw_output:
-        rich_console.print(Syntax(json.dumps(response_data, indent=raw_indent), 'json'))
-        raise typer.Exit()
-    
-    table = create_orchestration_table(
-            response_data,
-            service_definition,
-            consumer_id,
-            consumer_name,
-            provider_id,
-            provider_name,
-            sort_by,
     )
-
-    rich_console.print(table)
-    
+    return response.json(), response.status_code
 
 
-@orch_app.command(name='add')
 def add_orchestration_rule(
         service_definition: str,
-        consumer_id: int = typer.Option(...),
-        provider_system: Tuple[str, str, int] = typer.Option(...),
-        service_interface: str = typer.Option(..., '--interface'),
-        priority: int = typer.Option(1),
-        metadata: Optional[int] = None
+        service_interface: str,
+        provider_system: Tuple[str, str, int],
+        consumer_id: Optional[int] = None,  # Union[int, str, Tuple[str, str, int]] = typer.Option(...),
+        priority: int = 1,
+        metadata: Optional[int] = None,
+        add_auth_rule: Optional[bool] = None,
 ):
     active_cloud_directory = get_active_cloud_directory()
-    address, port = get_core_system_address_and_port(
+    address, port, secure, scheme = get_core_system_address_and_port(
             'orchestrator',
             active_cloud_directory,
     )
@@ -161,28 +189,36 @@ def add_orchestration_rule(
         "serviceInterfaceName": service_interface,
         "consumerSystemId": consumer_id,
         "providerSystem": dict(zip(("systemName", "address", "port"), provider_system)),
-        "cloud": {"operator": org_name, "name": cloud_name},
+        # "cloud": {"operator": org_name, "name": cloud_name, "secure": secure},
         "priority": priority,
         "attribute": metadata,
     }]
 
-    response_data = post_service(
-            f'https://{address}:{port}/orchestrator/mgmt/store',
+    response = post_service(
+            f'{scheme}://{address}:{port}/orchestrator/mgmt/store',
             active_cloud_directory,
             json=orchestration_input,
-    ).json()
+    )
 
-@orch_app.command(name='remove')
-def remove_orchestration_rule(
-        orchestration_id: int
-):
+    if add_auth_rule:
+        service_definition_id, interface_id, provider_id = get_ids_from_service_definition(
+                service_definition,
+                service_interface,
+                *provider_system
+        )
+        add_authorization_rule(consumer_id, provider_id, interface_id, service_definition_id)
+
+    return response.json, response.status_code
+
+
+def remove_orchestration_rule(orchestration_id):
     active_cloud_directory = get_active_cloud_directory()
-    address, port = get_core_system_address_and_port(
+    address, port, secure, scheme = get_core_system_address_and_port(
             'orchestrator',
             active_cloud_directory,
     )
-
-    response_data = delete_service(
-            f'https://{address}:{port}/orchestrator/mgmt/store/{orchestration_id}',
+    response = delete_service(
+            f'{scheme}://{address}:{port}/orchestrator/mgmt/store/{orchestration_id}',
             active_cloud_directory,
     )
+    return response.json(), response.status_code
