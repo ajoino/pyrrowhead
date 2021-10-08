@@ -26,14 +26,13 @@ def check_server(address, port, secure, certfile, keyfile, cafile):
             with socket.create_connection((address, port)) as sock:
                 with context.wrap_socket(sock, server_hostname=address):
                     return True
-        except (ConnectionRefusedError, ConnectionResetError, ssl.SSLEOFError):
+        except (ConnectionRefusedError, ConnectionResetError, ssl.SSLEOFError) as e:
             return False
-    # TODO: Doesn't work in insecure mode
     else:
         try:
             with socket.create_connection((address, port)) as sock:
                 return True
-        except (ConnectionRefusedError, ConnectionResetError):
+        except (ConnectionRefusedError, ConnectionResetError) as e:
             return False
 
 
@@ -80,6 +79,7 @@ def start_local_cloud(cloud_directory: Path):
                         core_system_config["port"],
                         ssl_enabled,
                         sysop_certfile, sysop_keyfile, sysop_cafile,
-                ): time.sleep(1)
+                ):
+                    time.sleep(1)
                 rich_console.print(Text(f'{core_system_print_name} started.'))
             rich_console.print('Local cloud is up and running!')

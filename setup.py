@@ -22,7 +22,10 @@ class PostInstallCommand(install):
         s = ttk.Style()
         s.theme_use('clam')
         filename = askdirectory(initialdir=Path.home(), title='Choose Arrowhead local cloud install directory')
-        local_clouds_directory = Path(filename)
+        try:
+            local_clouds_directory = Path(filename)
+        except TypeError:
+            local_clouds_directory = Path(typer.get_app_dir('pyrrowhead')) / 'local-clouds'
         typer.confirm(f'Local clouds will be installed in \'{local_clouds_directory.absolute()}\'')
 
         config_path = Path(typer.get_app_dir('pyrrowhead'))

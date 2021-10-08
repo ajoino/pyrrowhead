@@ -124,7 +124,7 @@ def setup(
         organization_name: Optional[str] = typer.Option(None, '--org', '-o'),
         installation_target: Path = clouds_directory,
         ip_network: str = typer.Option('172.16.1.0/24'),
-        ssl_enabled: Optional[bool] = typer.Option(None, '--ssl-enabled/--ssl-disabled'),
+        ssl_enabled: Optional[bool] = typer.Option(True, '--ssl-enabled/--ssl-disabled', show_default=False),
         do_install: bool = typer.Option(False, '--install'),
         include: Optional[List[CloudConfiguration]] = typer.Option('', case_sensitive=False),
 ):

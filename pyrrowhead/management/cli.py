@@ -3,9 +3,6 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 import typer
-from rich import box
-from rich.console import RenderGroup
-from rich.panel import Panel
 from rich.syntax import Syntax
 from rich.text import Text
 
@@ -13,12 +10,10 @@ from pyrrowhead import rich_console
 from pyrrowhead.management.common import AccessPolicy
 from pyrrowhead.management import(
     authorization,
-    common,
-    deviceregistry,
     orchestrator,
     serviceregistry,
     systemregistry,
-    utils,
+    common,
 )
 
 sr_app = typer.Typer(name='services')
@@ -37,10 +32,8 @@ def services_list_cli(
         show_access_policy: bool = typer.Option(False, '--show-access-policy', '-c', show_default=False,
                                                 help='Show access policy'),
         show_provider: bool = typer.Option(None, '--show-provider', '-s', help='Show provider system'),
-        raw_output: bool = typer.Option(False, '--raw-output', '-r', show_default=False,
-                                        help='Show information as json'),
-        indent: Optional[int] = typer.Option(None, '--raw-indent', metavar='NUM_SPACES',
-                                             help='Print json with NUM_SPACES spaces of indentation')
+        raw_output: bool = common.raw_output,
+        indent: Optional[int] = common.raw_indent,
 ):
     """
     List services registered in the active local cloud, sorted by id. Services shown can
@@ -72,56 +65,51 @@ def services_list_cli(
 
 @sr_app.command(name='inspect')
 def inspect_service_cli(
-        service_id: int,
-        raw_output: Optional[bool] = None,
-        indent: Optional[int] = None,
+        service_id: int = typer.Argument(..., metavar='SERVICE_ID',
+                                         help='Id of service to inspect.'),
+        raw_output: Optional[bool] = common.raw_output,
+        raw_indent: Optional[int] = common.raw_indent,
 ):
     """
     Show all information regarding specific service.
     """
-    response_data = serviceregistry.inspect_service(service_id)
+    response_data, status = serviceregistry.inspect_service(service_id)
+
+    if status >= 400:
+        rich_console.print(
+                f'Error occured when trying to inspect service with id {service_id} due to: '
+                f'{response_data["exceptionType"]}, {response_data["errorMessage"]}'
+        )
+        raise typer.Exit(-1)
 
     if raw_output:
-        rich_console.print(Syntax(json.dumps(response_data, indent=indent), 'json'))
+        rich_console.print(Syntax(json.dumps(response_data, indent=raw_indent), 'json'))
         raise typer.Exit()
 
-    tab_break = "\n\t"
-    provider = response_data["provider"]
-    render_group = RenderGroup(
-            (f'Service URI: {response_data["serviceUri"]}'),
-            (f'Interfaces: [bright_yellow]\n\t{tab_break.join(interface["interfaceName"] for interface in response_data["interfaces"])}[/bright_yellow]'),
-            (f'Access policy: [orange3]{response_data["secure"]}[/orange3]'),
-            (f'Version: {response_data["version"]}'),
-            (
-                    f'Provider:'
-                    f'{tab_break}Id: {provider["id"]}'
-                    f'{tab_break}System name: [blue]{provider["systemName"]}[/blue]'
-                    f'{tab_break}Address: {provider["address"]}'
-                    f'{tab_break}Port: {provider["port"]}'
-            ),
-            # TODO: "Always valid" should be printed in green and not red
-            ( f'End of validity: [red]{response_data.get("endOfValidity", "[green]Always valid[/green]")}[/red]'),
-    )
-    if (metadata := response_data.get("metadata")):
-        render_group.renderables.append(f'Metadata: {tab_break} {tab_break.join(f"{name}: {value}" for name, value in metadata.items())}')
-    rich_console.print(
-            (f' Service "{response_data["serviceDefinition"]["serviceDefinition"]}" (id: {service_id})'),
-            Panel(render_group, box=box.HORIZONTALS, expand=False)
-    )
+    serviceregistry.render_service(response_data)
 
 
 @sr_app.command(name='add')
 def add_service_cli(
-        service_definition: str,
-        uri: str,
-        interface: str,
-        access_policy: AccessPolicy = typer.Argument(AccessPolicy.CERTIFICATE),
-        system: Optional[Tuple[str, str, int]] = typer.Option((None, None, None), show_default=False),
+        service_definition: str = common.service_definition_argument,
+        uri: str = common.service_uri_argument,
+        interface: str = common.service_interface_argument,
+        access_policy: AccessPolicy = typer.Option(
+        AccessPolicy.CERTIFICATE, metavar='ACCESS_POLICY',
+        help='Must be one of three values: "NOT_SECURE", '
+             '"CERTIFICATE", or "TOKEN"'
+        ),
+        system: Optional[Tuple[str, str, int]] = typer.Option(
+            (None, None, None),
+            show_default=False,
+            metavar='SYSTEM_NAME ADDRESS PORT',
+            help='Provider system definition.'
+        ),
         system_id: Optional[int] = typer.Option(None, help='Not yet supported'),
 ):
     # TODO: Implement system_id option
     if all((all(system), system_id)):
-        rich_console.print('System and system-id are mutually exclusive options.')
+        rich_console.print('--System and --system-id are mutually exclusive options.')
         raise typer.Exit()
     elif not any((all(system), system_id)):
         rich_console.print('One option of --system or --system-id must be set.')
@@ -140,14 +128,16 @@ def add_service_cli(
         raise typer.Exit(-1)
 
     # Add service code
-    if response_code in {400, 401, 500}:
+    if response_code >= 400:
         rich_console.print(Text(f'Service registration failed: {response_data["errorMessage"]}'))
         raise typer.Exit(-1)
 
+    serviceregistry.render_service(response_data)
 
 @sr_app.command(name='remove')
 def remove_service_cli(
-        id: int,
+        id: int = typer.Argument(..., metavar='SERVICE_ID',
+                                 help='Id of service to remove'),
 ):
     try:
         response_data, status = serviceregistry.delete_service(id)
@@ -166,23 +156,36 @@ orch_app = typer.Typer(name='orchestration')
 
 @orch_app.command(name='add')
 def add_orchestration_rule_cli(
-        service_definition: str,
-        service_interface: str = typer.Option(..., '--interface'),
-        provider_system: Tuple[str, str, int] = typer.Option(..., '--provider'),
-        consumer_id: Optional[int] = typer.Option(None), #Union[int, str, Tuple[str, str, int]] = typer.Option(...),
-        consumer_name: Optional[str] = typer.Option(None),
-        consumer_address: Optional[str] = typer.Option(None),
-        consumer_port: Optional[int] = typer.Option(None),
+        service_definition: str = common.service_definition_argument,
+        service_interface: str = common.service_interface_argument,
+        provider: Tuple[str, str, int] = typer.Option(
+            ...,
+            show_default=False,
+            metavar='SYSTEM_NAME ADDRESS PORT',
+            help='Provider system definition.'
+        ),
+        consumer_id: Optional[int] = typer.Option(None, metavar='CONSUMER_ID',
+                                                  help='Incompatible with '
+                                                       'CONSUMER option'), #Union[int, str, Tuple[str, str, int]] = typer.Option(...),
+        consumer: Tuple[str, str, int] = typer.Option(
+            (None, None, None),
+            show_default=False,
+            metavar='SYSTEM_NAME ADDRESS PORT',
+            help='Consumer system definition, '
+                 'incompatible with CONSUMER_ID option.'
+        ),
         priority: int = typer.Option(1),
-        metadata: Optional[int] = None,
-        add_auth_rule: Optional[bool] = typer.Option(None, '--add-authentication', '-A')
+        add_auth_rule: Optional[bool] = typer.Option(None, '--add-authentication', '-A',
+                                                     help='Add authentication rule in together '
+                                                          'with the authentication rule'
+        ),
 ):
     if consumer_id is not None:
         pass
-    elif consumer_name is not None and consumer_address is None and consumer_port is None:
-        consumer_id = serviceregistry.get_system_id_from_name(consumer_name)
-    elif consumer_name is not None and consumer_address is not None and consumer_port is not None:
-        consumer_id = serviceregistry.get_system_id_from_name(consumer_name, consumer_address, consumer_port)
+    elif not all(consumer):
+        consumer_id = serviceregistry.get_system_id_from_name(*consumer)
+    elif all(consumer):
+        consumer_id = serviceregistry.get_system_id_from_name(*consumer)
     else:
         rich_console.print(
                 "No consumer information given, you must provide Pyrrowhead with either the "
@@ -190,22 +193,24 @@ def add_orchestration_rule_cli(
                 "information (--consumer-system).")
 
     if consumer_id == -1:
-        rich_console.print(f'No consumer systems found for consumer {consumer_name}')
+        rich_console.print(f'No consumer systems found for consumer {consumer[0]}')
         raise typer.Exit()
     if consumer_id == -2:
         rich_console.print(
-                f'Multiple candidate systems found for consumer {consumer_name}, please specify address and port')
+                f'Multiple candidate systems found for consumer {consumer[0]}, please specify address and port')
         raise typer.Exit()
 
-    orchestrator.add_orchestration_rule(
-            service_definition,
-            service_interface,
-            provider_system,
-            consumer_id,
-            priority,
-            metadata,
-            add_auth_rule,
+    response_data, status = orchestrator.add_orchestration_rule(
+            service_definition=service_definition,
+            service_interface=service_interface,
+            provider_system=provider,
+            consumer_id=consumer_id,
+            priority=priority,
+            add_auth_rule=add_auth_rule,
     )
+
+    if status >= 400:
+        print(response_data["errorMessage"], status)
 
 
 @orch_app.command(name='list')
@@ -216,8 +221,8 @@ def list_orchestration_cli(
         consumer_id: Optional[int] = typer.Option(None),
         consumer_name: Optional[str] = typer.Option(None),
         sort_by: orchestrator.SortbyChoices = typer.Option('id'),
-        raw_output: bool = typer.Option(False),
-        raw_indent: Optional[int] = typer.Option(None),
+        raw_output: bool = common.raw_output,
+        raw_indent: Optional[int] = common.raw_indent,
 ):
     response_data, status = orchestrator.list_orchestration_rules()
 
@@ -256,9 +261,12 @@ def list_authorization_cli(
         consumer_id: Optional[int] = typer.Option(None),
         consumer_name: Optional[str] = typer.Option(None),
 ):
+    """
+    Prints all orchestration rules, no filters or sorting options are implemented yet.
+    """
     response_data, status = authorization.list_authorization_rules()
 
-    rich_console.print(Syntax(json.dumps(response_data, indent=2), 'json'))
+    rich_console.print(authorization.create_authorization_table(response_data))
 
 
 @auth_app.command(name='add')
@@ -268,11 +276,17 @@ def add_authorization_cli(
         interface_id: int = typer.Option(...),
         service_definition_id: int = typer.Option(...),
 ):
+    """
+    Add authorization rule by ids.
+    """
     authorization.add_authorization_rule(consumer_id, provider_id, interface_id, service_definition_id)
 
 
 @auth_app.command(name='remove')
 def remove_authorization_cli():
+    """Not implemented."""
+    rich_console.print("Not implemented.")
+    raise typer.Exit(-1)
     authorization.remove_authorization_rule()
 
 
@@ -281,12 +295,10 @@ sys_app = typer.Typer(name='systems')
 
 @sys_app.command(name='list')
 def list_systems_cli(
-        system_name: Optional[str] = typer.Argument('', show_default=False),
-        # show_provider: bool = typer.Option(None, '--show-provider', '-s'),
-        # show_access_policy: bool = typer.Option(False, '--show-access-policy', '-c', show_default=False),
         raw_output: bool = typer.Option(False, '--raw-output', '-r', show_default=False),
         indent: Optional[int] = typer.Option(None, '--raw-indent')
 ):
+    """List systems registered in the local cloud"""
     response_data, status = systemregistry.list_systems()
 
     if raw_output:
@@ -317,4 +329,5 @@ def add_system_cli(
 def remove_system_cli(
         system_id: int
 ):
+    """Remove system by id."""
     response_data, status = systemregistry.remove_system(system_id)

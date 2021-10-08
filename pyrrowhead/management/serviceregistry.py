@@ -1,8 +1,11 @@
 from typing import Optional, Tuple, Dict
 
 from rich import box
+from rich.console import RenderGroup
+from rich.panel import Panel
 from rich.table import Table, Column
 
+from pyrrowhead import rich_console
 from pyrrowhead.management.common import AccessPolicy
 from pyrrowhead.management.utils import get_service, post_service, delete_service as del_service
 from pyrrowhead.utils import get_core_system_address_and_port, get_active_cloud_directory
@@ -15,12 +18,12 @@ def inspect_service(service_id: int):
             active_cloud_directory,
     )
 
-    response_data = get_service(
+    response = get_service(
             f'{scheme}://{address}:{port}/serviceregistry/mgmt/{service_id}',
             active_cloud_directory,
-    ).json()
+    )
 
-    return response_data
+    return response.json(), response.status_code
 
 
 def add_service(
@@ -31,7 +34,7 @@ def add_service(
         system: Optional[Tuple[str, str, int]],
 ):
     active_cloud_directory = get_active_cloud_directory()
-    address, port, secure, scheme = get_core_system_address_and_port(
+    sr_address, sr_port, secure, scheme = get_core_system_address_and_port(
             'service_registry',
             active_cloud_directory,
     )
@@ -51,7 +54,7 @@ def add_service(
     }
 
     response = post_service(
-            f'{scheme}://{address}:{port}/serviceregistry/mgmt/',
+            f'{scheme}://{sr_address}:{sr_port}/serviceregistry/mgmt/',
             active_cloud_directory,
             json=registry_request,
     )
@@ -200,3 +203,32 @@ def get_system_id_from_name(system_name: str, address: str = '', port: int = -1)
         return -2
 
     return candidate_systems[0]["id"]
+
+
+def render_service(response_data):
+    tab_break = "\n\t"
+    provider = response_data["provider"]
+    render_group = RenderGroup(
+            (f'Service URI: {response_data["serviceUri"]}'),
+            (f'Interfaces: [bright_yellow]\n\t'
+             f'{tab_break.join(interface["interfaceName"] for interface in response_data["interfaces"])}'
+             f'[/bright_yellow]'
+             ),
+            (f'Access policy: [orange3]{response_data["secure"]}[/orange3]'),
+            (f'Version: {response_data["version"]}'),
+            (
+                f'Provider:'
+                f'{tab_break}Id: {provider["id"]}'
+                f'{tab_break}System name: [blue]{provider["systemName"]}[/blue]'
+                f'{tab_break}Address: {provider["address"]}'
+                f'{tab_break}Port: {provider["port"]}'
+            ),
+            (f'End of validity: [red]{response_data.get("endOfValidity", "[green]Always valid[/green]")}[/red]'),
+    )
+    if (metadata := response_data.get("metadata")):
+        render_group.renderables.append(
+            f'Metadata: {tab_break} {tab_break.join(f"{name}: {value}" for name, value in metadata.items())}')
+    rich_console.print(
+            (f' Service "{response_data["serviceDefinition"]["serviceDefinition"]}" (id: {response_data["id"]})'),
+            Panel(render_group, box=box.HORIZONTALS, expand=False)
+    )

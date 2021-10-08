@@ -1,3 +1,4 @@
+import json
 from enum import Enum
 from typing import Optional, Tuple, Dict
 
@@ -124,9 +125,13 @@ def create_orchestration_table(
     table = Table(
             Column(header='id', style='red'),
             Column(header='Consumer (id)', style='bright_blue'),
+            Column(style='bright_blue'),
             Column(header='Provider (id)', style='blue'),
+            Column(style='blue'),
             Column(header='Service Definition (id)', style='green'),
-            Column(header='Interface', style='bright_yellow'),
+            Column(style='green'),
+            Column(header='Interface (id)', style='bright_yellow'),
+            Column(style='bright_yellow'),
             Column(header='priority', style='bright_white'),
             box=box.HORIZONTALS,
     )
@@ -143,10 +148,10 @@ def create_orchestration_table(
             continue
         table.add_row(
                 str(orch_rule['id']),
-                f'{orch_rule["consumerSystem"]["systemName"]} ({orch_rule["consumerSystem"]["id"]})',
-                f'{orch_rule["providerSystem"]["systemName"]} ({orch_rule["providerSystem"]["id"]})',
-                f'{orch_rule["serviceDefinition"]["serviceDefinition"]} ({orch_rule["serviceDefinition"]["id"]})',
-                orch_rule['serviceInterface']['interfaceName'],
+                f'{orch_rule["consumerSystem"]["systemName"]}', f'({orch_rule["consumerSystem"]["id"]})',
+                f'{orch_rule["providerSystem"]["systemName"]}', f'({orch_rule["providerSystem"]["id"]})',
+                f'{orch_rule["serviceDefinition"]["serviceDefinition"]}', f'({orch_rule["serviceDefinition"]["id"]})',
+                f'{orch_rule["serviceInterface"]["interfaceName"]}', f'({orch_rule["serviceInterface"]["id"]})',
                 str(orch_rule['priority']),
         )
 
@@ -171,7 +176,7 @@ def add_orchestration_rule(
         service_definition: str,
         service_interface: str,
         provider_system: Tuple[str, str, int],
-        consumer_id: Optional[int] = None,  # Union[int, str, Tuple[str, str, int]] = typer.Option(...),
+        consumer_id: Optional[int] = None,
         priority: int = 1,
         metadata: Optional[int] = None,
         add_auth_rule: Optional[bool] = None,
@@ -194,6 +199,8 @@ def add_orchestration_rule(
         "attribute": metadata,
     }]
 
+    import pprint
+    pprint.pprint(orchestration_input)
     response = post_service(
             f'{scheme}://{address}:{port}/orchestrator/mgmt/store',
             active_cloud_directory,
@@ -208,7 +215,12 @@ def add_orchestration_rule(
         )
         add_authorization_rule(consumer_id, provider_id, interface_id, service_definition_id)
 
-    return response.json, response.status_code
+    try:
+        response_data = response.json()
+    except json.JSONDecodeError:
+        response_data = {"errorMessage": "Error decoding json."}
+
+    return response_data, response.status_code
 
 
 def remove_orchestration_rule(orchestration_id):
@@ -221,4 +233,11 @@ def remove_orchestration_rule(orchestration_id):
             f'{scheme}://{address}:{port}/orchestrator/mgmt/store/{orchestration_id}',
             active_cloud_directory,
     )
-    return response.json(), response.status_code
+
+    try:
+        response_data = response.json()
+    except json.JSONDecodeError:
+        response_data = {"errorMessage": "Could not decode orchestration "
+                                         "response with status code {response.status_code"
+                         }
+    return response_data, response.status_code
