@@ -15,8 +15,8 @@ import yamlloader
 from rich.text import Text
 
 from pyrrowhead.database_config.passwords import db_passwords
-import pyrrowhead.database_config as database_config
-import pyrrowhead.certificate_generation as certificate_generation
+from pyrrowhead import database_config
+from pyrrowhead import certificate_generation
 from pyrrowhead import rich_console
 
 yaml_safedump = partial(yaml.dump, Dumper=yamlloader.ordereddict.CSafeDumper)

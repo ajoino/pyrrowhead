@@ -4,8 +4,8 @@ from pathlib import Path
 from rich import box
 from rich.table import Table, Column
 
-from pyrrowhead.management.utils import get_service, post_service, delete_service
-from pyrrowhead.utils import get_core_system_address_and_port, get_active_cloud_directory
+from ..management.utils import get_service, post_service, delete_service
+from ..utils import get_core_system_address_and_port, get_active_cloud_directory
 
 
 def list_systems():

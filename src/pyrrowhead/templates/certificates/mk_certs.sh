@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Created by Emanuel Palm (https://github.com/emanuelpalm)
+# Automatic generation by Jacob Nilsson
 
 cd "$(dirname "$0")" || exit
 source "lib_certs.sh"

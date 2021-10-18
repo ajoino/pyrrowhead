@@ -16,7 +16,7 @@ from pyrrowhead.management.authorization import (
     list_authorization_rules,
     remove_authorization_rule,
 )
-from  pyrrowhead.management.systemregistry import (
+from pyrrowhead.management.systemregistry import (
     add_system,
     list_systems,
     remove_system,
