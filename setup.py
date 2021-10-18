@@ -18,16 +18,6 @@ class PostInstallCommand(install):
         import typer
         import configparser
 
-        Tk().withdraw()
-        s = ttk.Style()
-        s.theme_use('clam')
-        filename = askdirectory(initialdir=Path.home(), title='Choose Arrowhead local cloud install directory')
-        try:
-            local_clouds_directory = Path(filename)
-        except TypeError:
-            local_clouds_directory = Path(typer.get_app_dir('pyrrowhead')) / 'local-clouds'
-        typer.confirm(f'Local clouds will be installed in \'{local_clouds_directory.absolute()}\'')
-
         config_path = Path(typer.get_app_dir('pyrrowhead'))
         config = configparser.ConfigParser()
         try:
@@ -38,6 +28,7 @@ class PostInstallCommand(install):
             config['pyrrowhead'] = {}
         config['local-clouds'] = {}
 
+        local_clouds_directory = Path(config_path) / 'local-clouds'
         config['pyrrowhead']['default-clouds-directory'] = str(local_clouds_directory)
 
         if local_clouds_directory.exists() and local_clouds_directory:
