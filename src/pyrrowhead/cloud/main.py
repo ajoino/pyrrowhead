@@ -89,7 +89,6 @@ def install(
     )
 
     config_file = target / 'cloud_config.yaml'
-    print(target)
 
     if not target.exists():
         raise RuntimeError('Target cloud is not set up properly, run `pyrrowhead cloud setup` before installing cloud.')
@@ -126,7 +125,7 @@ def setup(
         ip_network: str = typer.Option('172.16.1.0/24'),
         ssl_enabled: Optional[bool] = typer.Option(True, '--ssl-enabled/--ssl-disabled', show_default=False),
         do_install: bool = typer.Option(False, '--install'),
-        include: Optional[List[CloudConfiguration]] = typer.Option('', case_sensitive=False),
+        include: Optional[List[CloudConfiguration]] = typer.Option([], case_sensitive=False),
 ):
     if cloud_identifier:
         cloud_name, organization_name = cloud_identifier.split('.')

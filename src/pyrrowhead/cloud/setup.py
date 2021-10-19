@@ -120,8 +120,6 @@ def create_cloud_config(
     if not target_directory.exists():
         Path.mkdir(target_directory, parents=True)
 
-    print(target_directory)
-
     with open(target_directory / 'cloud_config.yaml', 'w', ) as yaml_file:
         yaml.dump(cloud_config, yaml_file, Dumper=yamlloader.ordereddict.CSafeDumper)
 

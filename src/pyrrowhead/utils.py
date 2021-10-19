@@ -36,7 +36,7 @@ def get_local_cloud(cloud_name: str):
 
 
 
-clouds_directory = typer.Option(None, '--dir', '-d', callback=get_local_cloud_directory, envvar=[constants.ENV_PYRROWHEAD_DIRECTORY])
+clouds_directory = typer.Option(None, '--dir', '-d', callback=get_local_cloud_directory)
 
 
 @contextmanager

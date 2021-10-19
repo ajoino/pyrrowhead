@@ -58,6 +58,7 @@ def uninstall_cloud(installation_target, complete=False, keep_root=False, keep_s
         (installation_target / 'docker-compose.yml').unlink()
         (installation_target / 'initSQL.sh').unlink()
     subprocess.run(['docker', 'volume', 'rm', f'mysql.{cloud_name}.{org_name}'])
-    raise typer.Exit('Uninstallation complete')
+    rich_console.print('Uninstallation complete')
+    raise typer.Exit()
 
 
