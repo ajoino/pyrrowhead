@@ -1,14 +1,13 @@
 import os
 from pathlib import Path
 from contextlib import contextmanager
-from typing import Tuple
+from typing import Tuple, Optional
 import configparser
 
 import typer
 import yaml
 
-from pyrrowhead import constants
-from pyrrowhead.constants import APP_NAME, LOCAL_CLOUDS_SUBDIR, CLOUD_CONFIG_FILE_NAME, CONFIG_FILE
+from pyrrowhead.constants import APP_NAME, CLOUD_CONFIG_FILE_NAME, CONFIG_FILE, LOCAL_CLOUDS_SUBDIR
 
 
 def get_pyrrowhead_path() -> Path:
@@ -28,13 +27,8 @@ def set_config(config: configparser.ConfigParser):
         config.write(config_file)
 
 
-def get_local_cloud_directory(dir: str = '') -> str:
-    if dir:
-        return dir
-
-    config = get_config()
-
-    return config['pyrrowhead']['default-clouds-directory']
+def get_local_cloud_directory() -> Path:
+    return get_pyrrowhead_path().joinpath(LOCAL_CLOUDS_SUBDIR)
 
 
 def get_local_cloud(cloud_name: str):

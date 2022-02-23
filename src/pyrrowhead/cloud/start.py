@@ -26,13 +26,13 @@ def check_server(address, port, secure, certfile, keyfile, cafile):
             with socket.create_connection((address, port)) as sock:
                 with context.wrap_socket(sock, server_hostname=address):
                     return True
-        except (ConnectionRefusedError, ConnectionResetError, ssl.SSLEOFError) as e:
+        except (ConnectionRefusedError, ConnectionResetError, OSError, ssl.SSLEOFError) as e:
             return False
     else:
         try:
             with socket.create_connection((address, port)) as sock:
                 return True
-        except (ConnectionRefusedError, ConnectionResetError) as e:
+        except (ConnectionRefusedError, ConnectionResetError, OSError) as e:
             return False
 
 

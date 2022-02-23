@@ -40,7 +40,8 @@ def decide_cloud_directory(
             cloud_identifier
         )
     else:
-        raise RuntimeError()
+        rich_console.print('Could decide local cloud.')
+        raise typer.Exit(-1)
 
 @cloud_app.command()
 def configure(

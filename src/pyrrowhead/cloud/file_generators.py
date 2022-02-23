@@ -5,7 +5,6 @@ from pathlib import Path
 import shutil
 from functools import partial
 from collections import OrderedDict
-import os, stat
 from importlib.resources import path
 import ipaddress
 

@@ -4,19 +4,22 @@ import typer
 import yaml
 import yamlloader
 
+from pyrrowhead import rich_console
+
 
 def enable_ssl(enable):
     config_dir = Path.cwd() / 'core_system_config'
 
     if not config_dir.is_dir():
-        raise typer.Exit('core_system_config directory does not exist')
+        rich_console.print('core_system_config directory does not exist')
+        raise typer.Exit()
 
     # Update property files
     for property_path in config_dir.iterdir():
         with open(property_path, 'r') as property_file:
             lines = property_file.readlines()
             update_line = f'server.ssl.enabled={str(enable).lower()}\n'
-            updated_lines = [update_line if line.startswith('server.ssl.enabled') else line for line in lines]
+            updated_lines = [line if not line.startswith('server.ssl.enabled') else update_line for line in lines]
         with open(property_path, 'w') as property_file:
             property_file.writelines(updated_lines)
 
