@@ -8,18 +8,25 @@ import typer
 import yaml
 
 from pyrrowhead import constants
-from pyrrowhead.constants import APP_DIR, LOCAL_CLOUDS_SUBDIR, CLOUD_CONFIG_FILE_NAME
+from pyrrowhead.constants import APP_NAME, LOCAL_CLOUDS_SUBDIR, CLOUD_CONFIG_FILE_NAME, CONFIG_FILE
+
+
+def get_pyrrowhead_path() -> Path:
+    return Path(typer.get_app_dir(APP_NAME, force_posix=True))
+
 
 def get_config() -> configparser.ConfigParser:
     config = configparser.ConfigParser()
-    with open(APP_DIR / 'config.cfg', 'r') as config_file:
+    with open(get_pyrrowhead_path().joinpath(CONFIG_FILE), 'r') as config_file:
         config.read_file(config_file)
 
     return config
 
-def set_config(config: configparser.ConfigParser) -> None:
-    with open(APP_DIR / 'config.cfg', 'w') as config_file:
+
+def set_config(config: configparser.ConfigParser):
+    with open(get_pyrrowhead_path().joinpath(CONFIG_FILE), 'w') as config_file:
         config.write(config_file)
+
 
 def get_local_cloud_directory(dir: str = '') -> str:
     if dir:
@@ -29,11 +36,11 @@ def get_local_cloud_directory(dir: str = '') -> str:
 
     return config['pyrrowhead']['default-clouds-directory']
 
+
 def get_local_cloud(cloud_name: str):
     config = get_config()
 
     return config['pyrrowhead']['local-clouds']
-
 
 
 clouds_directory = typer.Option(None, '--dir', '-d', callback=get_local_cloud_directory)
@@ -55,6 +62,7 @@ def set_active_cloud(cloud_identifier):
     config['pyrrowhead']['active-cloud'] = cloud_identifier
 
     set_config(config)
+
 
 def get_active_cloud_directory() -> Path:
     config = get_config()
