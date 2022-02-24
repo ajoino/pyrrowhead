@@ -55,8 +55,8 @@ def check_returncode(output, status, cloud_directory: Path = Path.cwd()):
 def start_local_cloud(cloud_directory: Path):
     with open(cloud_directory / 'cloud_config.yaml') as config_file:
         cloud_config = yaml.load(config_file, Loader=yamlloader.ordereddict.Loader)
-    cloud_name = cloud_config["cloud"]["cloud_name"]
-    org_name = cloud_config["cloud"]["organization_name"]
+    cloud_name = cloud_config["cloud"]["OPT_CLOUD_NAME"]
+    org_name = cloud_config["cloud"]["OPT_ORG_NAME"]
     ssl_enabled = cloud_config["cloud"]["ssl_enabled"]
 
     sysop_certfile = (cloud_directory / f'cloud-{cloud_name}/crypto/sysop.crt').absolute()

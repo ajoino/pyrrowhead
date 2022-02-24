@@ -26,7 +26,7 @@ def install_cloud(config_file_path, installation_target):
 
     with rich_console.status(Text('Installing an Arrowhead local cloud...')):
         generate_all_files(cloud_config, config_file_path, installation_target)
-        initialize_cloud(installation_target, cloud_config["cloud_name"], cloud_config["organization_name"])
+        initialize_cloud(installation_target, cloud_config["OPT_CLOUD_NAME"], cloud_config["OPT_ORG_NAME"])
     rich_console.print("Finished installing the [blue]Arrowhead[/blue] local cloud!")
 
 
@@ -38,8 +38,8 @@ def uninstall_cloud(installation_target, complete=False, keep_root=False, keep_s
     with open(installation_target / 'cloud_config.yaml') as config_file:
         cloud_config = yaml.load(config_file, Loader=yamlloader.ordereddict.CSafeLoader)["cloud"]
 
-    cloud_name = cloud_config["cloud_name"]
-    org_name = cloud_config["organization_name"]
+    cloud_name = cloud_config["OPT_CLOUD_NAME"]
+    org_name = cloud_config["OPT_ORG_NAME"]
 
     if complete:
         #shutil.rmtree(installation_target)

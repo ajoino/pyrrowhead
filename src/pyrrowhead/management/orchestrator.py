@@ -194,7 +194,7 @@ def add_orchestration_rule(
         "serviceInterfaceName": service_interface,
         "consumerSystemId": consumer_id,
         "providerSystem": dict(zip(("systemName", "address", "port"), provider_system)),
-        # "cloud": {"operator": org_name, "name": cloud_name, "secure": secure},
+        # "cloud": {"operator": org_name, "name": OPT_CLOUD_NAME, "secure": secure},
         "priority": priority,
         "attribute": metadata,
     }]

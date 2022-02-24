@@ -102,8 +102,8 @@ def create_cloud_config(
         ip_start += len(onboarding_core)
     cloud_config = {
         "cloud": OrderedDict({
-            "cloud_name": cloud_name,
-            "organization_name": organization_name,
+            "OPT_CLOUD_NAME": cloud_name,
+            "OPT_ORG_NAME": organization_name,
             "ssl_enabled": ssl_enabled,
             "subnet": str(network),
 

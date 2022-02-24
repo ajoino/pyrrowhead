@@ -10,11 +10,15 @@ from pyrrowhead.cloud.start import start_local_cloud
 from pyrrowhead.cloud.stop import stop_local_cloud
 from pyrrowhead.cloud.configuration import enable_ssl as enable_ssl_func
 from pyrrowhead.utils import (
-    clouds_directory,
     switch_directory,
     set_active_cloud as set_active_cloud_func, get_config
 )
-
+from pyrrowhead.constants import (
+    OPT_CLOUDS_DIRECTORY,
+    OPT_CLOUD_NAME,
+    OPT_ORG_NAME,
+    ARG_CLOUD_IDENTIFIER,
+)
 
 cloud_app = typer.Typer(name='cloud')
 
@@ -45,10 +49,10 @@ def decide_cloud_directory(
 
 @cloud_app.command()
 def configure(
-        cloud_identifier: str = typer.Argument(''),
-        cloud_name: Optional[str] = typer.Option(None, '--cloud', '-c'),
-        organization_name: Optional[str] = typer.Option(None, '--org', '-o'),
-        clouds_directory: Path = clouds_directory,
+        cloud_identifier: str = ARG_CLOUD_IDENTIFIER,
+        cloud_name: Optional[str] = OPT_CLOUD_NAME,
+        organization_name: Optional[str] = OPT_ORG_NAME,
+        clouds_directory: Path = OPT_CLOUDS_DIRECTORY,
         enable_ssl: Optional[bool] = typer.Option(None, '--enable-ssl/--disable-ssl')
 ):
     target, cloud_identifier = decide_cloud_directory(
@@ -79,11 +83,16 @@ def list(
 
 @cloud_app.command()
 def install(
-        cloud_identifier: str = typer.Argument(''),
-        cloud_name: Optional[str] = typer.Option(None, '--cloud', '-c'),
-        organization_name: Optional[str] = typer.Option(None, '--org', '-o'),
-        cloud_directory: Path = clouds_directory,
+        cloud_identifier: str = ARG_CLOUD_IDENTIFIER,
+        cloud_name: Optional[str] = OPT_CLOUD_NAME,
+        organization_name: Optional[str] = OPT_ORG_NAME,
+        cloud_directory: Path = OPT_CLOUDS_DIRECTORY,
 ):
+    """
+    Installs created cloud by creating certificate files and core service configuration files.
+
+    CLOUD_NAME and ORG_name are the cloud and organization names used in the generated certificates.
+    """
     target, cloud_identifier = decide_cloud_directory(
             cloud_identifier,
             cloud_name,
@@ -101,13 +110,19 @@ def install(
 
 @cloud_app.command()
 def uninstall(
-        cloud_identifier: str = typer.Argument(''),
-        cloud_name: Optional[str] = typer.Option(None, '--cloud', '-c'),
-        organization_name: Optional[str] = typer.Option(None, '--org', '-o'),
-        clouds_directory: Path = clouds_directory,
-        complete: bool = typer.Option(False, '--complete'),
-        keep_root: bool = typer.Option(False, '--keep-root'),
+        cloud_identifier: str = ARG_CLOUD_IDENTIFIER,
+        cloud_name: Optional[str] = OPT_CLOUD_NAME,
+        organization_name: Optional[str] = OPT_ORG_NAME,
+        clouds_directory: Path = OPT_CLOUDS_DIRECTORY,
+        complete: bool = typer.Option(False, '--complete', help='Completely removes all files, including cloud_config.yaml'),
+        #keep_root: bool = typer.Option(False, '--keep-root', ),
 ):
+    """
+    Uninstalls cloud by removing certificate files and core service configuration files.
+    Keeps the cloud_config.yaml file by default.
+
+    CLOUD_NAME and ORG_name are the cloud and organization names used in the generated certificates.
+    """
     target, cloud_identifier = decide_cloud_directory(
             cloud_identifier,
             cloud_name,
@@ -116,18 +131,15 @@ def uninstall(
     )
 
     stop_local_cloud(target)
-    uninstall_cloud(target, complete, keep_root)
+    uninstall_cloud(target, complete)
 
 
 @cloud_app.command()
 def setup(
-        cloud_identifier: Optional[str] = typer.Argument(
-                None,
-                help='Cloud identifier string of format <CLOUD_NAME>.<ORG_NAME>.'
-        ),
-        cloud_name: Optional[str] = typer.Option(None, '--cloud', '-c', help='CLOUD_NAME'),
-        organization_name: Optional[str] = typer.Option(None, '--org', '-o', help='ORG_NAME'),
-        installation_target: Path = clouds_directory,
+        cloud_identifier: Optional[str] = ARG_CLOUD_IDENTIFIER,
+        cloud_name: Optional[str] = OPT_CLOUD_NAME,
+        organization_name: Optional[str] = OPT_ORG_NAME,
+        installation_target: Path = OPT_CLOUDS_DIRECTORY,
         ip_network: str = typer.Option('172.16.1.0/24',
                                        help='IP network the docker network uses to run the local clouds'),
         ssl_enabled: Optional[bool] = typer.Option(True, '--ssl-enabled/--ssl-disabled', show_default=False,
@@ -165,12 +177,25 @@ def setup(
 
 @cloud_app.command()
 def up(
-        cloud_identifier: str = typer.Argument(''),
-        cloud_name: Optional[str] = typer.Option(None, '--cloud', '-c'),
-        organization_name: Optional[str] = typer.Option(None, '--org', '-o'),
-        clouds_directory: Path = clouds_directory,
-        set_active_cloud: bool = typer.Option(True, ' /--no-set-active', ' /-N', show_default=False),
+        cloud_identifier: str = ARG_CLOUD_IDENTIFIER,
+        cloud_name: Optional[str] = OPT_CLOUD_NAME,
+        organization_name: Optional[str] = OPT_ORG_NAME,
+        clouds_directory: Path = OPT_CLOUDS_DIRECTORY,
+        set_active_cloud: bool = typer.Option(True, ' /--no-set-active', ' /-N', show_default=False,
+                                              help='Does not set this cloud as the active cloud, '
+                                                   'useful if you want to start another cloud in the background.'),
 ):
+    """
+    Starts the local cloud core system docker containers.
+
+    If this command fails during the mysql startup, it might be because you are running
+    another mysql instance on port 3306. You must either terminate that service (e.g. running
+    `systemctl stop mysql.service`) or change the port of mysql in the configuration and reinstall
+    the local cloud before starting it again.
+
+    This command might take a while if this is the first time starting a local cloud on this machine
+    as docker needs to pull the images.
+    """
     target, cloud_identifier = decide_cloud_directory(
             cloud_identifier,
             cloud_name,
@@ -188,11 +213,14 @@ def up(
 
 @cloud_app.command()
 def down(
-        cloud_identifier: str = typer.Argument(''),
-        cloud_name: Optional[str] = typer.Option(None, '--cloud', '-c'),
-        organization_name: Optional[str] = typer.Option(None, '--org', '-o'),
-        clouds_directory: Path = clouds_directory,
+        cloud_identifier: str = ARG_CLOUD_IDENTIFIER,
+        cloud_name: Optional[str] = OPT_CLOUD_NAME,
+        organization_name: Optional[str] = OPT_ORG_NAME,
+        clouds_directory: Path = OPT_CLOUDS_DIRECTORY,
 ):
+    """
+    Shuts down the local cloud.
+    """
     target, cloud_identifier = decide_cloud_directory(
             cloud_identifier,
             cloud_name,

@@ -38,14 +38,14 @@ def generate_config_files(cloud_config, target_path):
     sr_port = core_systems['service_registry']['port']
 
     for system, config in core_systems.items():
-        system_cn = f'{config["system_name"]}.{cloud_config["cloud_name"]}.{cloud_config["organization_name"]}.arrowhead.eu'
+        system_cn = f'{config["system_name"]}.{cloud_config["OPT_CLOUD_NAME"]}.{cloud_config["OPT_ORG_NAME"]}.arrowhead.eu'
         template = env.get_template(f"core_system_config/{system}.properties")
 
         system_config_file = template.render(
                 **config,
                 system_cn=system_cn,
-                cloud_name=cloud_config["cloud_name"],
-                organization_name=cloud_config["organization_name"],
+                cloud_name=cloud_config["OPT_CLOUD_NAME"],
+                organization_name=cloud_config["OPT_ORG_NAME"],
                 password=db_passwords[system],
                 sr_address=sr_address,
                 sr_port=sr_port,
@@ -73,7 +73,7 @@ def generate_certgen(cloud_config, target_path):
         target_file.write(certgen_content)
 
 def generate_docker_compose_file(cloud_config, target_path):
-    cloud_identifier = f'{cloud_config["cloud_name"]}.{cloud_config["organization_name"]}'
+    cloud_identifier = f'{cloud_config["OPT_CLOUD_NAME"]}.{cloud_config["OPT_ORG_NAME"]}'
     docker_compose_content = OrderedDict({
         'version': '3',
         'services': OrderedDict({
@@ -102,7 +102,7 @@ def generate_docker_compose_file(cloud_config, target_path):
 
     for core_system, config in cloud_config['core_systems'].items():
         core_name = config['domain']
-        cloud_name = cloud_config["cloud_name"]
+        cloud_name = cloud_config["OPT_CLOUD_NAME"]
         docker_compose_content['services'][core_name] = {
             'container_name': f'{core_name}.{cloud_identifier}',
             'image': f'svetlint/{core_name}:4.3.0',

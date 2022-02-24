@@ -4,14 +4,9 @@ from contextlib import contextmanager
 from typing import Tuple
 import configparser
 
-import typer
 import yaml
 
-from pyrrowhead.constants import APP_NAME, CLOUD_CONFIG_FILE_NAME, CONFIG_FILE, LOCAL_CLOUDS_SUBDIR
-
-
-def get_pyrrowhead_path() -> Path:
-    return Path(typer.get_app_dir(APP_NAME, force_posix=True))
+from pyrrowhead.constants import CLOUD_CONFIG_FILE_NAME, CONFIG_FILE, get_pyrrowhead_path
 
 
 def get_config() -> configparser.ConfigParser:
@@ -27,23 +22,10 @@ def set_config(config: configparser.ConfigParser):
         config.write(config_file)
 
 
-def get_local_cloud_directory() -> Path:
-    return get_pyrrowhead_path().joinpath(LOCAL_CLOUDS_SUBDIR)
-
-
 def get_local_cloud(cloud_name: str):
     config = get_config()
 
     return config['pyrrowhead']['local-clouds']
-
-
-clouds_directory = typer.Option(
-        None,
-        '--dir',
-        '-d',
-        callback=get_local_cloud_directory,
-        help='Directory of local cloud, should most often be left empty.',
-)
 
 
 @contextmanager
