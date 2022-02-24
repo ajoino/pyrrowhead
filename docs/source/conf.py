@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'Pyrrowhead'
-copyright = '2022, Jacob Nilsson'
+copyright = '2021-2022, Jacob Nilsson'
 author = 'Jacob Nilsson'
 
 # The full version, including alpha/beta/rc tags
@@ -48,6 +48,9 @@ exclude_patterns = []
 # a list of builtin themes.
 #
 html_theme = 'alabaster'
+html_theme_options = {
+    'sidebar_width': '270px',
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

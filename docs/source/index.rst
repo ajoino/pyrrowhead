@@ -5,10 +5,16 @@
 
 Welcome to Pyrrowhead's documentation!
 ======================================
+Pyrrowhead is a CLI tool for managing Arrowhead local clouds.
+
+To get started with Pyrrowhead
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+   installation
+   cloud_setup.rst
 
 
 
