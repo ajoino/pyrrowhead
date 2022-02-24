@@ -20,7 +20,8 @@ from pyrrowhead.constants import (
     ARG_CLOUD_IDENTIFIER,
 )
 
-cloud_app = typer.Typer(name='cloud')
+cloud_app = typer.Typer(name='cloud', help='Used to set up, configure, start, and stop local clouds using '
+                                           'the appropriate subcommand. See list below.')
 
 def decide_cloud_directory(
         cloud_identifier: str,
@@ -55,6 +56,12 @@ def configure(
         clouds_directory: Path = OPT_CLOUDS_DIRECTORY,
         enable_ssl: Optional[bool] = typer.Option(None, '--enable-ssl/--disable-ssl')
 ):
+    """
+    Statically configures an existing local cloud.
+
+    The local cloud needs to be reinstalled after being configured
+    to make sure the changes are applied.
+    """
     target, cloud_identifier = decide_cloud_directory(
             cloud_identifier,
             cloud_name,
@@ -89,7 +96,7 @@ def install(
         cloud_directory: Path = OPT_CLOUDS_DIRECTORY,
 ):
     """
-    Installs created cloud by creating certificate files and core service configuration files.
+    Installs cloud by creating certificate files and core service configuration files.
 
     CLOUD_NAME and ORG_name are the cloud and organization names used in the generated certificates.
     """
@@ -154,7 +161,7 @@ def setup(
                                                                         'certificate authority and onboarding systems.'),
 ):
     """
-    Command to set up local clouds.
+    Sets up local clouds by creating a folder structure and cloud_config.yaml file.
 
     CLOUD_NAME and ORG_name are the cloud and organization names used in the generated certificates.
     """
@@ -186,7 +193,7 @@ def up(
                                                    'useful if you want to start another cloud in the background.'),
 ):
     """
-    Starts the local cloud core system docker containers.
+    Starts local cloud core system docker containers.
 
     If this command fails during the mysql startup, it might be because you are running
     another mysql instance on port 3306. You must either terminate that service (e.g. running
@@ -219,7 +226,7 @@ def down(
         clouds_directory: Path = OPT_CLOUDS_DIRECTORY,
 ):
     """
-    Shuts down the local cloud.
+    Shuts down local cloud.
     """
     target, cloud_identifier = decide_cloud_directory(
             cloud_identifier,
