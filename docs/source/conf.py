@@ -31,6 +31,7 @@ release = '0.5.0b'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'sphinxcontrib.programoutput',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -50,6 +51,7 @@ exclude_patterns = []
 html_theme = 'alabaster'
 html_theme_options = {
     'sidebar_width': '270px',
+    'page_width': '0.7pw',
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
