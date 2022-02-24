@@ -16,7 +16,7 @@ from pyrrowhead.management import(
     common,
 )
 
-sr_app = typer.Typer(name='services')
+sr_app = typer.Typer(name='services', help='Service related commands. See list for further information.')
 
 
 @sr_app.command(name='list')
@@ -32,12 +32,13 @@ def services_list_cli(
         show_access_policy: bool = typer.Option(False, '--show-access-policy', '-c', show_default=False,
                                                 help='Show access policy'),
         show_provider: bool = typer.Option(None, '--show-provider', '-s', help='Show provider system'),
-        raw_output: bool = common.raw_output,
-        indent: Optional[int] = common.raw_indent,
+        raw_output: bool = common.OPT_RAW_OUTPUT,
+        indent: Optional[int] = common.OPT_RAW_INDENT,
 ):
     """
-    List services registered in the active local cloud, sorted by id. Services shown can
-    be filtered by service definition or system. More information about the
+    List services registered in the active local cloud, sorted by ID.
+
+    Services shown can be filtered by service definition or system. More information about the
     services can be seen with the -usc flags. The raw json data is accessed by the -r flag.
     """
     exclusive_options = (service_definition, system_name, system_id)
@@ -66,12 +67,12 @@ def services_list_cli(
 @sr_app.command(name='inspect')
 def inspect_service_cli(
         service_id: int = typer.Argument(..., metavar='SERVICE_ID',
-                                         help='Id of service to inspect.'),
-        raw_output: Optional[bool] = common.raw_output,
-        raw_indent: Optional[int] = common.raw_indent,
+                                         help='ID of service to inspect.'),
+        raw_output: Optional[bool] = common.OPT_RAW_OUTPUT,
+        raw_indent: Optional[int] = common.OPT_RAW_INDENT,
 ):
     """
-    Show all information regarding specific service.
+    Show information about service given by ID.
     """
     response_data, status = serviceregistry.inspect_service(service_id)
 
@@ -91,9 +92,9 @@ def inspect_service_cli(
 
 @sr_app.command(name='add')
 def add_service_cli(
-        service_definition: str = common.service_definition_argument,
-        uri: str = common.service_uri_argument,
-        interface: str = common.service_interface_argument,
+        service_definition: str = common.ARG_SERVICE_DEFINITION,
+        uri: str = common.ARG_SERVICE_URI,
+        interface: str = common.ARG_SERVICE_INTERFACE,
         access_policy: AccessPolicy = typer.Option(
         AccessPolicy.CERTIFICATE, metavar='ACCESS_POLICY',
         help='Must be one of three values: "NOT_SECURE", '
@@ -107,6 +108,9 @@ def add_service_cli(
         ),
         system_id: Optional[int] = typer.Option(None, help='Not yet supported'),
 ):
+    """
+    Add service to service registry
+    """
     # TODO: Implement system_id option
     if all((all(system), system_id)):
         rich_console.print('--System and --system-id are mutually exclusive options.')
@@ -139,6 +143,9 @@ def remove_service_cli(
         id: int = typer.Argument(..., metavar='SERVICE_ID',
                                  help='Id of service to remove'),
 ):
+    """
+    Remove service from service registry by ID.
+    """
     try:
         response_data, status = serviceregistry.delete_service(id)
     except IOError as e:
@@ -156,8 +163,8 @@ orch_app = typer.Typer(name='orchestration')
 
 @orch_app.command(name='add')
 def add_orchestration_rule_cli(
-        service_definition: str = common.service_definition_argument,
-        service_interface: str = common.service_interface_argument,
+        service_definition: str = common.ARG_SERVICE_DEFINITION,
+        service_interface: str = common.ARG_SERVICE_INTERFACE,
         provider: Tuple[str, str, int] = typer.Option(
             ...,
             show_default=False,
@@ -221,8 +228,8 @@ def list_orchestration_cli(
         consumer_id: Optional[int] = typer.Option(None),
         consumer_name: Optional[str] = typer.Option(None),
         sort_by: orchestrator.SortbyChoices = typer.Option('id'),
-        raw_output: bool = common.raw_output,
-        raw_indent: Optional[int] = common.raw_indent,
+        raw_output: bool = common.OPT_RAW_OUTPUT,
+        raw_indent: Optional[int] = common.OPT_RAW_INDENT,
 ):
     response_data, status = orchestrator.list_orchestration_rules()
 

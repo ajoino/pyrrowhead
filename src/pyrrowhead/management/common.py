@@ -17,9 +17,9 @@ def CoreSystemPort(port: int):
     return typer.Option(port, '--port', '-p')
 
 CertDirectory = typer.Option(Path('.'), '--cert-dir')
-service_definition_argument = typer.Argument(..., metavar='SERVICE_DEFINITION', help='')
-service_uri_argument = typer.Argument(..., metavar='SERVICE_URI', help='')
-service_interface_argument = typer.Argument(
+ARG_SERVICE_DEFINITION = typer.Argument(..., metavar='SERVICE_DEFINITION', help='')
+ARG_SERVICE_URI = typer.Argument(..., metavar='SERVICE_URI', help='')
+ARG_SERVICE_INTERFACE = typer.Argument(
         ..., metavar='SERVICE_INTERFACE',
         help='Must be of format <PROTOCOL>-<SECURITY>-<PAYLOAD>.'
 )
@@ -32,8 +32,8 @@ def system_option(
             metavar='SYSTEM_NAME ADDRESS PORT',
             help=f'{system_name.capitalize()} '
                  f'system definition.'
-),
-raw_output = typer.Option(
+)
+OPT_RAW_OUTPUT = typer.Option(
         False,
         '--raw-output',
         '-r',
@@ -42,7 +42,7 @@ raw_output = typer.Option(
              'use together with --raw-indent option to '
              'pretty print.',
 )
-raw_indent = typer.Option(
+OPT_RAW_INDENT = typer.Option(
         None,
         '--raw-indent',
         metavar='NUM_SPACES',
