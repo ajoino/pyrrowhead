@@ -64,9 +64,11 @@ def configure(
 
 @cloud_app.command()
 def list(
-        organization_filter: str = typer.Option('', '--organization', '-o'),
-        clouds_dir: Path = clouds_directory
+        #organization_filter: str = typer.Option('', '--organization', '-o'),
 ):
+    """
+    Lists all local clouds.
+    """
     config = get_config()
 
     for cloud_identifier, directory in config['local-clouds'].items():
@@ -119,15 +121,31 @@ def uninstall(
 
 @cloud_app.command()
 def setup(
-        cloud_identifier: str = typer.Argument(''),
-        cloud_name: Optional[str] = typer.Option(None, '--cloud', '-c'),
-        organization_name: Optional[str] = typer.Option(None, '--org', '-o'),
+        cloud_identifier: Optional[str] = typer.Argument(
+                None,
+                help='Cloud identifier string of format <CLOUD_NAME>.<ORG_NAME>.'
+        ),
+        cloud_name: Optional[str] = typer.Option(None, '--cloud', '-c', help='CLOUD_NAME'),
+        organization_name: Optional[str] = typer.Option(None, '--org', '-o', help='ORG_NAME'),
         installation_target: Path = clouds_directory,
-        ip_network: str = typer.Option('172.16.1.0/24'),
-        ssl_enabled: Optional[bool] = typer.Option(True, '--ssl-enabled/--ssl-disabled', show_default=False),
-        do_install: bool = typer.Option(False, '--install'),
-        include: Optional[List[CloudConfiguration]] = typer.Option([], case_sensitive=False),
+        ip_network: str = typer.Option('172.16.1.0/24',
+                                       help='IP network the docker network uses to run the local clouds'),
+        ssl_enabled: Optional[bool] = typer.Option(True, '--ssl-enabled/--ssl-disabled', show_default=False,
+                                                   help='Enabled/disable local cloud security. Enabled by default. '
+                                                        'SSL rarely be disabled.'),
+        do_install: bool = typer.Option(False, '--install', help='Install local cloud after running the setup command.'),
+        include: Optional[List[CloudConfiguration]] = typer.Option([], case_sensitive=False,
+                                                                   help='Core systems to include apart from the mandatory core systems. '
+                                                                        '--include eventhandler includes the eventhandler. '
+                                                                        '--include intercloud includes the gateway and gatekeeper. '
+                                                                        '--include onboarding includes the system and device registry, '
+                                                                        'certificate authority and onboarding systems.'),
 ):
+    """
+    Command to set up local clouds.
+
+    CLOUD_NAME and ORG_name are the cloud and organization names used in the generated certificates.
+    """
     if cloud_identifier:
         cloud_name, organization_name = cloud_identifier.split('.')
     if not cloud_identifier:

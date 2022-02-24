@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from contextlib import contextmanager
-from typing import Tuple, Optional
+from typing import Tuple
 import configparser
 
 import typer
@@ -37,7 +37,13 @@ def get_local_cloud(cloud_name: str):
     return config['pyrrowhead']['local-clouds']
 
 
-clouds_directory = typer.Option(None, '--dir', '-d', callback=get_local_cloud_directory)
+clouds_directory = typer.Option(
+        None,
+        '--dir',
+        '-d',
+        callback=get_local_cloud_directory,
+        help='Directory of local cloud, should most often be left empty.',
+)
 
 
 @contextmanager
