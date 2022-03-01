@@ -16,6 +16,8 @@ from cryptography import x509
 from cryptography.x509 import Certificate, CertificateSigningRequest
 from cryptography.x509.oid import NameOID
 
+from pyrrowhead.types import ConfigDict
+
 
 class KeyCertPair(NamedTuple):
     key: RSAPrivateKey
@@ -173,9 +175,9 @@ def generate_system_cert(
     return KeyCertPair(system_key, system_cert)
 
 
-def generate_core_system_certs(cloud_config, cloud_cert, cloud_key) -> Dict[str, KeyCertPair]:
-    cloud_name = cloud_config["cloud"]["OPT_CLOUD_NAME"]
-    org_name = cloud_config["cloud"]["OPT_ORG_NAME"]
+def generate_core_system_certs(cloud_config: ConfigDict, cloud_cert, cloud_key) -> Dict[str, KeyCertPair]:
+    cloud_name = cloud_config["cloud"]['cloud_name']
+    org_name = cloud_config["cloud"]['organization_name']
     return {
         core_system['system_name']: generate_system_cert(
                 f'{core_system["system_name"]}.{cloud_name}.{org_name}.arrowhead.eu',
@@ -187,9 +189,9 @@ def generate_core_system_certs(cloud_config, cloud_cert, cloud_key) -> Dict[str,
     }
 
 
-def generate_client_system_certs(cloud_config, cloud_cert, cloud_key) -> Dict[str, KeyCertPair]:
-    cloud_name = cloud_config["cloud"]["OPT_CLOUD_NAME"]
-    org_name = cloud_config["cloud"]["OPT_ORG_NAME"]
+def generate_client_system_certs(cloud_config: ConfigDict, cloud_cert, cloud_key) -> Dict[str, KeyCertPair]:
+    cloud_name = cloud_config["cloud"]['cloud_name']
+    org_name = cloud_config["cloud"]['organization_name']
     try:
         return {
             client_system['system_name']: generate_system_cert(
@@ -213,7 +215,6 @@ def store_system_files(
         password: Optional[str],
 ):
     core_name = core_keycert.cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
-    # OPT_CLOUD_NAME = cloud_cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
 
     with open(core_cert_path.with_suffix('.p12'), 'wb') as p12_file:
         p12_file.write(serialize_p12(
@@ -363,7 +364,7 @@ def generate_and_store_cloud_cert(
 
 
 def generate_cloud_files(
-        cloud_config: Dict,
+        cloud_config: ConfigDict,
         cloud_cert_dir: Path,
         cloud_key: RSAPrivateKey,
         cloud_cert: Certificate,
@@ -371,8 +372,8 @@ def generate_cloud_files(
         root_cert: Certificate,
         password: Optional[str]
 ):
-    cloud_name = cloud_config['cloud']['OPT_CLOUD_NAME']
-    org_name = cloud_config['cloud']['OPT_ORG_NAME']
+    cloud_name = cloud_config['cloud']['cloud_name']
+    org_name = cloud_config['cloud']['organization_name']
 
     core_system_certs = generate_core_system_certs(cloud_config, cloud_cert, cloud_key)
     client_system_certs = generate_client_system_certs(cloud_config, cloud_cert, cloud_key)
@@ -413,13 +414,13 @@ def generate_cloud_files(
 
 def setup_certificates(cloud_config_path: Path, password: Optional[str]):
     with open(cloud_config_path, 'r') as cloud_config_file:
-        cloud_config = yaml.safe_load(cloud_config_file)
+        cloud_config: ConfigDict = yaml.safe_load(cloud_config_file)
 
-    cloud_name = cloud_config["cloud"]["OPT_CLOUD_NAME"]
-    org_name = cloud_config["cloud"]["OPT_ORG_NAME"]
+    cloud_name = cloud_config["cloud"]['cloud_name']
+    org_name = cloud_config["cloud"]['organization_name']
 
     cloud_dir = cloud_config_path.parent
-    cloud_cert_dir = cloud_dir / f'cloud-{cloud_name}/crypto/'
+    cloud_cert_dir = cloud_dir / f'certs/crypto/'
     org_cert_dir = cloud_dir.parent / 'org-certs/crypto/'
     root_cert_dir = cloud_dir.parent / 'root-certs/crypto'
 

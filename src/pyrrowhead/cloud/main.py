@@ -9,6 +9,7 @@ from pyrrowhead.cloud.setup import CloudConfiguration, create_cloud_config
 from pyrrowhead.cloud.start import start_local_cloud
 from pyrrowhead.cloud.stop import stop_local_cloud
 from pyrrowhead.cloud.configuration import enable_ssl as enable_ssl_func
+from pyrrowhead.cloud.system import add_system
 from pyrrowhead.utils import (
     switch_directory,
     set_active_cloud as set_active_cloud_func, get_config
@@ -236,3 +237,41 @@ def down(
     )
     stop_local_cloud(target)
     set_active_cloud_func('')
+
+
+@cloud_app.command(name='client-add')
+def system(
+        cloud_identifier: str = ARG_CLOUD_IDENTIFIER,
+        cloud_name: Optional[str] = OPT_CLOUD_NAME,
+        organization_name: Optional[str] = OPT_ORG_NAME,
+        clouds_directory: Path = OPT_CLOUDS_DIRECTORY,
+        system_name: str = typer.Option(..., '--name', '-n', metavar='SYSTEM_NAME', help='System name'),
+        system_address: Optional[str] = typer.Option(None, '--addr', '-a', metavar='ADDRESS', help='System address'),
+        system_port: Optional[int] = typer.Option(None, '--port', '-p', metavar='PORT', help='System port'),
+        system_addl_addr: Optional[List[str]] = typer.Option(None, '--addl-addr', '-aa', metavar='ADDL_DOMAIN', help='Additional domains to add in the client certificate'),
+):
+    """
+    Adds system to the cloud configuration.
+    """
+    target, cloud_identifier = decide_cloud_directory(
+            cloud_identifier,
+            cloud_name,
+            organization_name,
+            clouds_directory,
+    )
+
+    config_file = target / 'cloud_config.yaml'
+
+    try:
+        add_system(
+                config_file,
+                system_name,
+                system_address,
+                system_port,
+                system_addl_addr,
+        )
+    except ValueError as e:
+        rich_console.print(str(e))
+        raise typer.Exit(-1)
+
+
