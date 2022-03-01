@@ -16,5 +16,6 @@ class CloudDict(TypedDict):
     core_systems: Dict[str, SystemDict]
     client_systems: Optional[Dict[str, SystemDict]]
 
+
 class ConfigDict(TypedDict):
     cloud: CloudDict

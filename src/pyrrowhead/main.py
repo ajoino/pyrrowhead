@@ -12,5 +12,5 @@ app.add_typer(sys_app)
 app.add_typer(cloud_app)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app()
