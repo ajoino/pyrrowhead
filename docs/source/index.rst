@@ -14,9 +14,8 @@ To get started with Pyrrowhead
    :caption: Contents:
 
    installation
-   cloud_setup.rst
-
-
+   cloud_setup
+   changelog
 
 Indices and tables
 ==================

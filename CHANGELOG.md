@@ -1,4 +1,12 @@
-# Changelog
+Changelog
+=========
+
+## Version 0.5.0b
+ - Removed all code running at install time. Pyrrowhead will no instead look for a
+   `~/.pyrrowhead` directory and initialize the directory if it doesn't exist.
+ - Added command `pyrrowhead cloud client-add` so client systems can be added to the
+   cloud config without having to edit it manually.
+ - All code is now formatted with Black.
 
 ## Version 0.4.0b
  - Now considered to be a beta release.
