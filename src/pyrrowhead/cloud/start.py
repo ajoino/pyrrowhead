@@ -66,13 +66,9 @@ def start_local_cloud(cloud_directory: Path):
     org_name = cloud_config["cloud"]["organization_name"]
     ssl_enabled = cloud_config["cloud"]["ssl_enabled"]
 
-    sysop_certfile = (
-        cloud_directory / f"cloud-{cloud_name}/crypto/sysop.crt"
-    ).absolute()
-    sysop_keyfile = (
-        cloud_directory / f"cloud-{cloud_name}/crypto/sysop.key"
-    ).absolute()
-    sysop_cafile = (cloud_directory / f"cloud-{cloud_name}/crypto/sysop.ca").absolute()
+    sysop_certfile = (cloud_directory / f"certs/crypto/sysop.crt").absolute()
+    sysop_keyfile = (cloud_directory / f"certs/crypto/sysop.key").absolute()
+    sysop_cafile = (cloud_directory / f"certs/crypto/sysop.ca").absolute()
     core_systems = cloud_config["cloud"]["core_systems"]
 
     with switch_directory(cloud_directory):

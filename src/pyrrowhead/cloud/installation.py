@@ -60,7 +60,7 @@ def uninstall_cloud(
         set_config(config)
     else:
         if not keep_sysop:
-            shutil.rmtree(installation_target / f"cloud-{cloud_name}")
+            shutil.rmtree(installation_target / f"certs")
         else:
             # TODO: Code that deletes everything except the sysop.* files
             pass

@@ -11,9 +11,9 @@ def get_ssl_files(cloud_directory: Path):
         with open(cloud_path) as cloud_file:
             cloud_config = yaml.safe_load(cloud_file)
         cloud_name = cloud_config["cloud"]["cloud_name"]
-        cert_subpath = f"cloud-{cloud_name}/crypto/sysop.crt"
-        key_subpath = f"cloud-{cloud_name}/crypto/sysop.key"
-        ca_subpath = f"cloud-{cloud_name}/crypto/sysop.ca"
+        cert_subpath = f"certs/crypto/sysop.crt"
+        key_subpath = f"certs/crypto/sysop.key"
+        ca_subpath = f"certs/crypto/sysop.ca"
     else:
         cert_subpath = "sysop.crt"
         key_subpath = "sysop.key"

@@ -122,8 +122,8 @@ def generate_docker_compose_file(cloud_config, target_path):
             "depends_on": [f"mysql.{cloud_identifier}"],
             "volumes": [
                 f"./core_system_config/{core_system}.properties:/{core_name}/application.properties",
-                f"./cloud-{cloud_name}/crypto/{core_system}.p12:/{core_name}/{core_system}.p12",
-                f"./cloud-{cloud_name}/crypto/truststore.p12:/{core_name}/truststore.p12",
+                f"./certs/crypto/{core_system}.p12:/{core_name}/{core_system}.p12",
+                f"./certs/crypto/truststore.p12:/{core_name}/truststore.p12",
             ],
             "networks": {cloud_identifier: {"ipv4_address": config["address"]}},
             "ports": [f'{config["port"]}:{config["port"]}'],
