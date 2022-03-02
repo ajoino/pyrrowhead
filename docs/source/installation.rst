@@ -1,11 +1,14 @@
-Installing Pyrrowhead
-=====================
+Installation
+============
 
 Pyrrowhead is written in Python and is installed with pip.
 Pyrrowhead is written for use on Linux machines, which is reflected in these instructions.
 There are no plans for Windows support, but any contributions that would add Windows support are welcome!
 
 If you run virtual environments but want Pyrrowhead installed globally run (**recommended**)
+
+Installation
+------------
 
 .. code-block:: bash
 
@@ -23,4 +26,3 @@ or if you want to install it in a virtual environment, run
 .. code-block:: bash
 
    pip install pyrrowhead
-

@@ -14,7 +14,10 @@ To get started with Pyrrowhead
    :caption: Contents:
 
    installation
-   cloud_setup
+   tutorial
+   internals
+   how_to/main
+   cli_reference/main
    changelog
 
 Indices and tables

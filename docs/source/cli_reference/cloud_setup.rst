@@ -1,14 +1,7 @@
-Local cloud setup
-=================
+``pyrrowhead cloud``
+====================
 
-You can manage your local clouds by using the ``cloud`` command.
-To see what it has to offer, try
-
-.. code-block:: bash
-
-   pyrrowhead cloud --help
-
-The ``cloud`` command has seven subcommands to manage multiple local clouds at the same time.
+.. command-output:: pyrrowhead cloud --help
 
 ``pyrrowhead cloud list``
 -------------------------
@@ -19,6 +12,8 @@ The ``cloud`` command has seven subcommands to manage multiple local clouds at t
 --------------------------
 
 .. command-output:: pyrrowhead cloud setup --help
+
+.. _cli-cloud-install:
 
 ``pyrrowhead cloud install``
 ----------------------------
@@ -34,6 +29,15 @@ The ``cloud`` command has seven subcommands to manage multiple local clouds at t
 ------------------------------
 
 .. command-output:: pyrrowhead cloud configure --help
+
+.. _cli-cloud-client-add:
+
+``pyrrowhead cloud client-add``
+-------------------------------
+
+.. command-output:: pyrrowhead cloud client-add --help
+
+.. _cli-cloud-up:
 
 ``pyrrowhead cloud up``
 -----------------------
