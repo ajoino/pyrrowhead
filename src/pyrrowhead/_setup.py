@@ -2,9 +2,6 @@ from pathlib import Path
 from typing import Tuple
 import configparser
 
-import typer
-
-from pyrrowhead import constants
 from pyrrowhead import utils
 from pyrrowhead.constants import APP_NAME, LOCAL_CLOUDS_SUBDIR, CONFIG_FILE
 
@@ -17,7 +14,7 @@ def _is_initialized(pyrrowhead_path: Path) -> Tuple[bool, bool, bool]:
 
 
 def _setup_pyrrowhead():
-    pyrrowhead_path = constants.get_pyrrowhead_path()
+    pyrrowhead_path = utils.get_pyrrowhead_path()
     config = configparser.ConfigParser()
 
     path_exists, config_exists, cloud_dir_exists = _is_initialized(pyrrowhead_path)

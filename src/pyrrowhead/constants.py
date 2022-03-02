@@ -1,6 +1,6 @@
-from pathlib import Path
-
 import typer
+
+from pyrrowhead.utils import get_local_cloud_directory
 
 ENV_PYRROWHEAD_DIRECTORY = "PYRROWHEAD_INSTALL_DIRECTORY"
 ENV_PYRROWHEAD_ACTIVE_CLOUD = "PYRROWHEAD_ACTIVE_CLOUD"
@@ -8,11 +8,6 @@ APP_NAME = "pyrrowhead"
 LOCAL_CLOUDS_SUBDIR = "local-clouds"
 CLOUD_CONFIG_FILE_NAME = "cloud_config.yaml"
 CONFIG_FILE = "config.cfg"
-
-
-def get_local_cloud_directory() -> Path:
-    return get_pyrrowhead_path().joinpath(LOCAL_CLOUDS_SUBDIR)
-
 
 OPT_CLOUDS_DIRECTORY = typer.Option(
     None,
@@ -28,6 +23,12 @@ Cloud identifier string of format <CLOUD_NAME>.<ORG_NAME>.
 Mutually exclusive with options -c and -o.
 """,
 )
+ARG_ORG_NAME = typer.Argument(
+    None,
+    help="""
+    Organization name.
+    """
+)
 OPT_CLOUD_NAME = typer.Option(
     None,
     "--cloud",
@@ -42,5 +43,3 @@ OPT_ORG_NAME = typer.Option(
 )
 
 
-def get_pyrrowhead_path() -> Path:
-    return Path(typer.get_app_dir(APP_NAME, force_posix=True))
