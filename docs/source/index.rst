@@ -13,8 +13,8 @@ To get started with Pyrrowhead
    :maxdepth: 2
    :caption: Contents:
 
-   installation
    tutorial
+   installation
    internals
    how_to/main
    cli_reference/main

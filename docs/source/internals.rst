@@ -14,7 +14,7 @@ when necessary.
    Any contributions towards enabling support for those platforms are appreciated.
 
 .. warning::
-   The internals of Pyrrowhead are subject to change.
+   The internals of Pyrrowhead are always subject to change.
 
 Pyrrowhead Home Directory
 -------------------------
@@ -109,6 +109,7 @@ with the :ref:`startup command <cli-cloud-up>` to boot the core system docker co
 
 Lastly, the ``sql/`` directory is used by the database container, and this directory is set up by ``initSQL.sh``
 during installation.
+These should both be ignored by users.
 
 .. _cloud-configuration-file:
 
