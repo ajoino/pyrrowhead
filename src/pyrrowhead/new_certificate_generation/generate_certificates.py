@@ -466,7 +466,7 @@ def setup_certificates(cloud_config_path: Path, password: Optional[str]):
     org_name = cloud_config["cloud"]["organization_name"]
 
     cloud_dir = cloud_config_path.parent
-    cloud_cert_dir = cloud_dir / f"certs/crypto/"
+    cloud_cert_dir = cloud_dir / "certs/crypto/"
     org_cert_dir = cloud_dir.parent / "org-certs/crypto/"
     root_cert_dir = cloud_dir.parent / "root-certs/crypto"
 

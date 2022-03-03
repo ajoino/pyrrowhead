@@ -8,6 +8,10 @@ import typer
 import yaml
 
 
+class PyrrowheadError(Exception):
+    pass
+
+
 def get_config() -> configparser.ConfigParser:
     from pyrrowhead.constants import CONFIG_FILE
     config = configparser.ConfigParser()
