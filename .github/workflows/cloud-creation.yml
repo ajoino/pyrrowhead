@@ -27,7 +27,11 @@ jobs:
       - name: Create cloud
         run: |
           pyrrowhead cloud create test-cloud.test-org
+      - name: Check that files are created
+        run: |
+          echo Pyrrowhead dir check
           test -d ~/.pyrrowhead
+          echo test-cloud config file created
           test -f ~/.pyrrowhead/test-org/test-cloud/cloud_config.yaml
       - name: Install cloud
         run: pyrrowhead cloud install test-cloud.test-org
