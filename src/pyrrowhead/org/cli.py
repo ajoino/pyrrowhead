@@ -36,7 +36,7 @@ def setup(org_name: str = ARG_ORG_NAME):
 
 @org_app.command()
 def install(org_name: str = ARG_ORG_NAME):
-    password = '123456'
+    password = "123456"
     populate_org_dir(org_name, password)
 
 

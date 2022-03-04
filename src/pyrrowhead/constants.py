@@ -31,7 +31,7 @@ ARG_ORG_NAME = typer.Argument(
     None,
     help="""
     Organization name.
-    """
+    """,
 )
 OPT_CLOUD_NAME = typer.Option(
     None,
@@ -45,5 +45,3 @@ OPT_ORG_NAME = typer.Option(
     "-o",
     help="ORG_NAME. Mandatory with option -c and mutually exclusive with argument CLOUD_IDENTIFIER",
 )
-
-

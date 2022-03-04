@@ -14,6 +14,7 @@ class PyrrowheadError(Exception):
 
 def get_config() -> configparser.ConfigParser:
     from pyrrowhead.constants import CONFIG_FILE
+
     config = configparser.ConfigParser()
     with open(get_pyrrowhead_path().joinpath(CONFIG_FILE), "r") as config_file:
         config.read_file(config_file)
@@ -23,6 +24,7 @@ def get_config() -> configparser.ConfigParser:
 
 def set_config(config: configparser.ConfigParser):
     from pyrrowhead.constants import CONFIG_FILE
+
     with open(get_pyrrowhead_path().joinpath(CONFIG_FILE), "w") as config_file:
         config.write(config_file)
 
@@ -65,6 +67,7 @@ def get_core_system_address_and_port(
     core_system: str, cloud_directory: Path
 ) -> Tuple[str, int, bool, str]:
     from pyrrowhead.constants import CLOUD_CONFIG_FILE_NAME
+
     with open(cloud_directory / CLOUD_CONFIG_FILE_NAME, "r") as cloud_config_file:
         cloud_config = yaml.safe_load(cloud_config_file)
     address = cloud_config["cloud"]["core_systems"][core_system]["address"]
@@ -77,9 +80,11 @@ def get_core_system_address_and_port(
 
 def get_local_cloud_directory() -> Path:
     from pyrrowhead.constants import LOCAL_CLOUDS_SUBDIR
+
     return get_pyrrowhead_path().joinpath(LOCAL_CLOUDS_SUBDIR)
 
 
 def get_pyrrowhead_path() -> Path:
     from pyrrowhead.constants import APP_NAME
+
     return Path(typer.get_app_dir(APP_NAME, force_posix=True))
