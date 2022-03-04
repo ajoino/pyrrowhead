@@ -25,7 +25,11 @@ jobs:
           python -m pip install -e .
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Create cloud
-        run: pyrrowhead cloud create test_cloud.test_org
+        run: |
+          pyrrowhead cloud create test-cloud.test-org
+          test -d ~/.pyrrowhead
+          test -f ~/.pyrrowhead/test-org/test-cloud/cloud_config.yaml
       - name: Install cloud
-        run: pyrrowhead cloud install test_cloud.test_org
+        run: pyrrowhead cloud install test-cloud.test-org
+          test -f ~/.pyrrowhead/test-org/test-cloud/certs/crypto/serviceregistry.crt
 
