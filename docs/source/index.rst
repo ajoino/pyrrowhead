@@ -7,7 +7,7 @@ Welcome to Pyrrowhead's documentation!
 ======================================
 Pyrrowhead is a CLI tool for managing Arrowhead local clouds.
 
-To get started with Pyrrowhead
+To get started with Pyrrowhead...
 
 .. toctree::
    :maxdepth: 2

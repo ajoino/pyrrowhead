@@ -52,14 +52,15 @@ exclude_patterns = []
 html_theme = 'alabaster'
 html_theme_options = {
     'sidebar_width': '270px',
-    'page_width': '70vw',
+    'fixed_sidebar': True,
     'show_relbars': True,
     'github_button': True,
     'github_user': 'ajoino',
     'github_repo': 'pyrrowhead',
     'github_count': False,
     'show_related': True,
-    'description': 'The Arrowhead CLI management tool!'
+    'description': 'The Arrowhead CLI management tool!',
+    'body_text_align': 'justify',
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
