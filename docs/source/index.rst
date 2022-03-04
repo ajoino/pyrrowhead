@@ -15,8 +15,8 @@ To get started with Pyrrowhead...
 
    tutorial
    installation
-   internals
    how_to/main
+   internals
    cli_reference/main
    changelog
 

@@ -1,0 +1,17 @@
+on:
+  push:
+    branches:
+      - main
+jobs:
+  create_cloud:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install Pyrrowhead
+        run: pip install -e .
+      - name: Create cloud
+        run: pyrrowhead cloud create test_cloud.test_org
+      - name: Install cloud
+        run: pyrrowhead cloud install test_cloud.test_org
+
+

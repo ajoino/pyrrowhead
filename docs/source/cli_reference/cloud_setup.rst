@@ -11,7 +11,7 @@
 ``pyrrowhead cloud setup``
 --------------------------
 
-.. command-output:: pyrrowhead cloud setup --help
+.. command-output:: pyrrowhead cloud create --help
 
 .. _cli-cloud-install:
 
