@@ -36,5 +36,5 @@ jobs:
       - name: Install cloud
         run: |
           pyrrowhead cloud install test-cloud.test-org
-          test -f ~/.pyrrowhead/test-org/test-cloud/certs/crypto/serviceregistry.crt
+          test -f ~/.pyrrowhead/test-org/test-cloud/certs/crypto/service_registry.crt
 
