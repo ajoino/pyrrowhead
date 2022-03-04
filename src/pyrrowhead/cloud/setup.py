@@ -120,6 +120,7 @@ def create_cloud_config(
     }
 
     target_directory = target_directory / f"{organization_name}/{cloud_name}"
+    print(f"TEST CLOUD DIRECTORY: {target_directory}")
 
     if not target_directory.is_absolute():
         target_directory = target_directory.expanduser()
