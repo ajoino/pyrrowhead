@@ -34,6 +34,7 @@ jobs:
           echo test-cloud config file created
           test -f ~/.pyrrowhead/local-clouds/test-org/test-cloud/cloud_config.yaml
       - name: Install cloud
-        run: pyrrowhead cloud install test-cloud.test-org
+        run: |
+          pyrrowhead cloud install test-cloud.test-org
           test -f ~/.pyrrowhead/test-org/test-cloud/certs/crypto/serviceregistry.crt
 
