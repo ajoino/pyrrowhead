@@ -27,14 +27,13 @@ jobs:
       - name: Create cloud
         run: |
           pyrrowhead cloud create test-cloud.test-org
-      - name: Check that files are created
-        run: |
-          echo Pyrrowhead dir check
+          echo Pyrrowhead dir check...
           test -d ~/.pyrrowhead
-          echo test-cloud config file created
+          echo test-cloud config file created check...
           test -f ~/.pyrrowhead/local-clouds/test-org/test-cloud/cloud_config.yaml
       - name: Install cloud
         run: |
           pyrrowhead cloud install test-cloud.test-org
-          test -f ~/.pyrrowhead/test-org/test-cloud/certs/crypto/service_registry.crt
+          echo Certificates created check...
+          test -f ~/.pyrrowhead/local-clouds/test-org/test-cloud/certs/crypto/service_registry.crt
 
