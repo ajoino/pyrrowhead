@@ -20,4 +20,8 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install flake8 pytest
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Create cloud
+        run: pyrrowhead cloud create test_cloud.test_org
+      - name: Install cloud
+        run: pyrrowhead cloud install test_cloud.test_org
 
