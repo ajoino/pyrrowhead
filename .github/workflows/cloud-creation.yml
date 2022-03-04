@@ -25,6 +25,7 @@ jobs:
         run: |
           python -m build
           python -m pip install -e .
+          pip install -e .
       - name: Create cloud
         run: pyrrowhead cloud create test_cloud.test_org
       - name: Install cloud
