@@ -14,6 +14,7 @@ from pyrrowhead.utils import (
     switch_directory,
     set_active_cloud as set_active_cloud_func,
     get_config,
+    check_valid_identifier,
 )
 from pyrrowhead.constants import (
     OPT_CLOUDS_DIRECTORY,
@@ -36,23 +37,28 @@ def decide_cloud_directory(
     clouds_directory: Path,
 ) -> Tuple[Path, str]:
     if len(split_cloud_identifier := cloud_identifier.split(".")) == 2:
-        return (
+        ret = (
             clouds_directory.joinpath(
                 *[part for part in reversed(split_cloud_identifier)]
             ),
             cloud_identifier,
         )
     elif cloud_name is not None and organization_name is not None:
-        return (
+        ret = (
             clouds_directory.joinpath(organization_name, cloud_name),
             f"{cloud_name}.{organization_name}",
         )
     elif cloud_identifier != "":
-        return (clouds_directory, cloud_identifier)
+        ret = (clouds_directory, cloud_identifier)
     else:
-        rich_console.print("Could decide local cloud.")
+        rich_console.print("Could not decide local cloud.")
         raise typer.Exit(-1)
 
+    if not ret[0].exists():
+        rich_console.print(f"Could not find local cloud \"{cloud_identifier}\"")
+        raise typer.Exit(-1)
+
+    return ret
 
 @cloud_app.command()
 def configure(
@@ -155,7 +161,7 @@ def uninstall(
 
 
 @cloud_app.command()
-def setup(
+def create(
     cloud_identifier: Optional[str] = ARG_CLOUD_IDENTIFIER,
     cloud_name: Optional[str] = OPT_CLOUD_NAME,
     organization_name: Optional[str] = OPT_ORG_NAME,
@@ -193,6 +199,10 @@ def setup(
         cloud_name, organization_name = cloud_identifier.split(".")
     if not cloud_identifier:
         cloud_identifier = ".".join((cloud_name, organization_name))
+
+    if not check_valid_identifier(cloud_identifier):
+        rich_console.print(f'"{cloud_identifier}" is not a valid cloud identifier')
+        raise typer.Exit(-1)
 
     create_cloud_config(
         installation_target,

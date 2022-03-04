@@ -4,4 +4,4 @@ Cloud and Organization Setup Commands
 *************************************
 
 .. include:: cloud_setup.rst
-.. include:: organization.rst
+.. .. include:: organization.rst

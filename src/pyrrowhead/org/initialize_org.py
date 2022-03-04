@@ -1,4 +1,6 @@
+import shutil
 from pathlib import Path
+from typing import Optional
 
 from pyrrowhead.utils import get_local_cloud_directory, PyrrowheadError
 from pyrrowhead.constants import ORG_CERT_DIR, ROOT_CERT_DIR
@@ -25,7 +27,7 @@ def create_root_certificates(org_dir: Path, password: str) -> KeyCertPair:
 
 
 def create_org_certificates(
-    org_name: str, org_dir: Path, root_key, root_cert, password
+    org_name: str, org_dir: Path, root_key, root_cert, password,
 ) -> KeyCertPair:
     org_cert_dir = org_dir / ORG_CERT_DIR / "crypto"
     org_cert_dir.mkdir(parents=True)
@@ -33,6 +35,17 @@ def create_org_certificates(
         org_name, org_cert_dir, root_key, root_cert, password
     )
     return pair
+
+
+def copy_org_certificates(
+    org_name: str, key_path: Path, cert_path: Optional[Path] = None,
+):
+    org_dir = get_local_cloud_directory() / org_name
+    org_cert_dir = org_dir / ORG_CERT_DIR / "crypto"
+    shutil.copy(key_path, org_cert_dir / f"{org_name}.key")
+
+    if cert_path is not None:
+        shutil.copy(key_path, org_cert_dir / f"{org_name}.crt")
 
 
 def populate_org_dir(org_name: str, password: str):

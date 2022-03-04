@@ -88,3 +88,13 @@ def get_pyrrowhead_path() -> Path:
     from pyrrowhead.constants import APP_NAME
 
     return Path(typer.get_app_dir(APP_NAME, force_posix=True))
+
+
+def check_valid_identifier(identifier: str):
+    import re
+
+    identifier_re = re.compile(
+        r"^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$"
+    )
+
+    return identifier_re.search(identifier) is not None
