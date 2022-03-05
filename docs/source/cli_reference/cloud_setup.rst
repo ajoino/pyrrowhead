@@ -1,3 +1,5 @@
+.. _cli-cloud:
+
 ``pyrrowhead cloud``
 ====================
 
@@ -8,8 +10,10 @@
 
 .. command-output:: pyrrowhead cloud list --help
 
-``pyrrowhead cloud setup``
---------------------------
+.. _cli-cloud-create:
+
+``pyrrowhead cloud create``
+---------------------------
 
 .. command-output:: pyrrowhead cloud create --help
 

@@ -14,7 +14,6 @@ To get started with Pyrrowhead...
    :caption: Contents:
 
    tutorial
-   installation
    how_to/main
    internals
    cli_reference/main
