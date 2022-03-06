@@ -12,7 +12,7 @@ from rich.text import Text
 from rich.syntax import Syntax
 
 from pyrrowhead import rich_console
-from pyrrowhead.types import ConfigDict, CloudDict
+from pyrrowhead.types import ConfigDict, CloudDict, ClientSystemDict
 from pyrrowhead.constants import CLOUD_CONFIG_FILE_NAME
 
 
@@ -83,12 +83,14 @@ def add_system(
                     f'Client system with name "{system_name}", address {addr}, and port {port} already exists'
                 )
 
-    system_dict = {
+    system_dict: ClientSystemDict = {
         "system_name": system_name,
         "address": addr,
         "port": port,
-        "domain": system_additional_addresses,
     }
+
+    if system_additional_addresses is not None:
+        system_dict["san"] = system_additional_addresses
 
     if cloud_config["client_systems"] is None:
         cloud_config["client_systems"] = {}

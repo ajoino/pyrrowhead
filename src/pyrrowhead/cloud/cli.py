@@ -5,16 +5,17 @@ import typer
 
 from pyrrowhead import rich_console
 from pyrrowhead.cloud.installation import install_cloud, uninstall_cloud
-from pyrrowhead.cloud.setup import CloudConfiguration, create_cloud_config
+from pyrrowhead.cloud.create import CloudConfiguration, create_cloud_config
 from pyrrowhead.cloud.start import start_local_cloud
 from pyrrowhead.cloud.stop import stop_local_cloud
 from pyrrowhead.cloud.configuration import enable_ssl as enable_ssl_func
-from pyrrowhead.cloud.system import add_system
+from pyrrowhead.cloud.client_add import add_system
 from pyrrowhead.utils import (
     switch_directory,
     set_active_cloud as set_active_cloud_func,
     get_config,
     check_valid_identifier,
+    PyrrowheadError,
 )
 from pyrrowhead.constants import (
     OPT_CLOUDS_DIRECTORY,
@@ -168,7 +169,16 @@ def create(
     installation_target: Path = OPT_CLOUDS_DIRECTORY,
     ip_network: str = typer.Option(
         "172.16.1.0/24",
+        metavar="IP",
         help="IP network the docker network uses to run the local clouds",
+    ),
+    core_san: Optional[List[str]] = typer.Option(
+        None,
+        "--san",
+        metavar="SUBJECT_ALTERNATIVE_NAME",
+        help="Subject alternative names to include in the core system certificates. An example is the IP-address of"
+             "the device the core systems are running on. IPs should be prepended with 'ip:' and dns strings prepended "
+             "with 'dns:', for example ip:127.0.0.1 and dns:host123.example-org.com"
     ),
     ssl_enabled: Optional[bool] = typer.Option(
         True,
@@ -204,16 +214,21 @@ def create(
         rich_console.print(f'"{cloud_identifier}" is not a valid cloud identifier')
         raise typer.Exit(-1)
 
-    create_cloud_config(
-        installation_target,
-        cloud_identifier,
-        cloud_name,
-        organization_name,
-        ssl_enabled,
-        ip_network,
-        do_install,
-        include,
-    )
+    try:
+        create_cloud_config(
+            target_directory=installation_target,
+            cloud_identifier=cloud_identifier,
+            cloud_name=cloud_name,
+            organization_name=organization_name,
+            ssl_enabled=ssl_enabled,
+            ip_subnet=ip_network,
+            core_san=core_san,
+            do_install=do_install,
+            include=include,
+        )
+    except PyrrowheadError as e:
+        rich_console.print(str(e))
+        raise typer.Exit(-1)
 
 
 @cloud_app.command()
@@ -294,10 +309,10 @@ def system(
     ),
     system_addl_addr: Optional[List[str]] = typer.Option(
         None,
-        "--addl-addr",
-        "-aa",
-        metavar="ADDL_DOMAIN",
-        help="Additional domains to add in the client certificate",
+        "--san",
+        "-s",
+        metavar="SAN",
+        help="Client subject alternative name.",
     ),
 ):
     """

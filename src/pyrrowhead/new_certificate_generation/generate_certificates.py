@@ -17,6 +17,7 @@ from cryptography.x509 import Certificate, CertificateSigningRequest
 from cryptography.x509.oid import NameOID
 
 from pyrrowhead.types import ConfigDict
+from pyrrowhead.utils import PyrrowheadError
 
 
 class KeyCertPair(NamedTuple):
@@ -36,6 +37,16 @@ def generate_private_key() -> RSAPrivateKey:
         public_exponent=65537,
         key_size=2048,
     )
+
+
+def get_general_name(san_with_prefix: str) -> x509.GeneralName:
+    if san_with_prefix.startswith('ip:'):
+        return x509.IPAddress(ip_address(san_with_prefix[3:]))
+    elif san_with_prefix.startswith('dns:'):
+        return x509.DNSName(san_with_prefix[4:])
+
+    raise PyrrowheadError("Pyrrowhead only recognizes IPs prefixed with 'ip:' or dns strings prefixed with 'dns:'"
+                          "as valid subject alternative names.")
 
 
 def generate_root_certificate() -> KeyCertPair:
@@ -99,16 +110,22 @@ def generate_ca_signing_request(
 
 def generate_system_signing_request(
     common_name: str,
-    ips: Iterable[str],
-    # subject_alternative_names: Optional[List[str]],
+    ip: Optional[str],
+    sans: Optional[List[str]],
 ) -> Tuple[RSAPrivateKey, CertificateSigningRequest]:
     key = generate_private_key()
+
+    general_names = []
+    if ip is not None:
+        general_names.append(x509.IPAddress(ip_address(ip)))
+    if sans is not None:
+        general_names.extend(get_general_name(san) for san in sans)
 
     csr_builder = (
         x509.CertificateSigningRequestBuilder()
         .subject_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, common_name)]))
         .add_extension(
-            x509.SubjectAlternativeName((x509.IPAddress(ip_address(ip)) for ip in ips)),
+            x509.SubjectAlternativeName(general_names),
             critical=False,
         )
     )
@@ -166,11 +183,12 @@ def generate_ca_cert(
 
 def generate_system_cert(
     common_name: str,
-    ips: Iterable[str],
+    ip: Optional[str],
     issuer_cert: Certificate,
     issuer_key: RSAPrivateKey,
+    sans: Optional[List[str]] = None,
 ) -> KeyCertPair:
-    system_key, system_csr = generate_system_signing_request(common_name, ips)
+    system_key, system_csr = generate_system_signing_request(common_name, ip, sans)
     system_cert = sign_certificate_request(system_csr, issuer_cert, issuer_key)
 
     return KeyCertPair(system_key, system_cert)
@@ -183,10 +201,11 @@ def generate_core_system_certs(
     org_name = cloud_config["cloud"]["organization_name"]
     return {
         core_system["system_name"]: generate_system_cert(
-            f'{core_system["system_name"]}.{cloud_name}.{org_name}.arrowhead.eu',
-            [core_system["address"]],
-            cloud_cert,
-            cloud_key,
+            common_name=f'{core_system["system_name"]}.{cloud_name}.{org_name}.arrowhead.eu',
+            ip=core_system["address"],
+            issuer_cert=cloud_cert,
+            issuer_key=cloud_key,
+            sans=cloud_config["cloud"]["core_san"],
         )
         for core_system in cloud_config["cloud"]["core_systems"].values()
     }
@@ -201,9 +220,10 @@ def generate_client_system_certs(
         return {
             client_id: generate_system_cert(
                 f'{client_system["system_name"]}.{cloud_name}.{org_name}.arrowhead.eu',
-                [client_system["address"]],
+                client_system["address"],
                 cloud_cert,
                 cloud_key,
+                client_system["sans"]
             )
             for client_id, client_system in cloud_config["cloud"][
                 "client_systems"
@@ -415,7 +435,7 @@ def generate_cloud_files(
     )
     sysop_cert = generate_system_cert(
         f"sysop.{cloud_name}.{org_name}.arrowhead.eu",
-        (),
+        None,
         issuer_cert=cloud_cert,
         issuer_key=cloud_key,
     )
