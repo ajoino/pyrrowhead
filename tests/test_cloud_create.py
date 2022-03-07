@@ -1,6 +1,8 @@
 from pathlib import Path
+from typing import Callable
 
 import pytest
+from click.testing import Result
 from typer.testing import CliRunner
 
 from pyrrowhead import utils
@@ -31,10 +33,17 @@ def mock_pyrrowhead_path(pyrrowhead_tmp_path, monkeypatch):
     return pyrrowhead_tmp_path
 
 
+def debug_runner_output(res: Result):
+    if res.exit_code == 0:
+        return
+    print(res.output)
+
+
 class TestTutorial:
     def test_create_cloud(self, mock_pyrrowhead_path):
         res = runner.invoke(app, "cloud create test-cloud.test-org".split())
 
+        debug_runner_output(res)
         assert res.exit_code == 0
 
     def test_client_add(self, mock_pyrrowhead_path):
@@ -45,30 +54,37 @@ class TestTutorial:
             app, "cloud client-add test-cloud.test-org -n provider".split()
         )
 
+        debug_runner_output(res1)
         assert res1.exit_code == 0
+        debug_runner_output(res2)
         assert res2.exit_code == 0
 
     def test_client_install(self, mock_pyrrowhead_path):
         res = runner.invoke(app, "cloud install test-cloud.test-org".split())
 
+        debug_runner_output(res)
         assert res.exit_code == 0
 
     def test_start_cloud(self, mock_pyrrowhead_path):
         res = runner.invoke(app, "cloud up test-cloud.test-org".split())
 
+        debug_runner_output(res)
         assert res.exit_code == 0
 
     def test_systems_list(self, mock_pyrrowhead_path):
         res = runner.invoke(app, "systems list".split())
 
+        debug_runner_output(res)
         assert res.exit_code == 0
 
     def test_stop_cloud(self, mock_pyrrowhead_path):
         res = runner.invoke(app, "cloud down test-cloud.test-org".split())
 
+        debug_runner_output(res)
         assert res.exit_code == 0
         res = runner.invoke(app, "cloud uninstall test-cloud.test-org".split())
 
+        debug_runner_output(res)
         assert res.exit_code == 0
 
 
@@ -80,6 +96,7 @@ class TestLocalCloudCreation:
     def test_create_local_cloud(self, mock_pyrrowhead_path):
         res = runner.invoke(app, f"cloud create {self.cloud_identifier}".split())
 
+        debug_runner_output(res)
         assert res.exit_code == 0
         assert mock_pyrrowhead_path.joinpath(CONFIG_FILE).is_file()
         assert mock_pyrrowhead_path.joinpath(LOCAL_CLOUDS_SUBDIR).is_dir()
@@ -99,5 +116,6 @@ class TestLocalCloudCreation:
         cloud_path = org_path.joinpath(self.cloud_name)
         cloud_cert_path = cloud_path.joinpath("certs", "crypto")
 
-        assert res.exit_code == 1
+        debug_runner_output(res)
+        assert res.exit_code == 0
         assert mock_pyrrowhead_path.joinpath()
