@@ -9,7 +9,7 @@ from pyrrowhead.cloud.create import CloudConfiguration, create_cloud_config
 from pyrrowhead.cloud.start import start_local_cloud
 from pyrrowhead.cloud.stop import stop_local_cloud
 from pyrrowhead.cloud.configuration import enable_ssl as enable_ssl_func
-from pyrrowhead.cloud.client_add import add_system
+from pyrrowhead.cloud.client_add import add_client_system
 from pyrrowhead.utils import (
     switch_directory,
     set_active_cloud as set_active_cloud_func,
@@ -56,10 +56,11 @@ def decide_cloud_directory(
         raise typer.Exit(-1)
 
     if not ret[0].exists():
-        rich_console.print(f"Could not find local cloud \"{cloud_identifier}\"")
+        rich_console.print(f'Could not find local cloud "{cloud_identifier}"')
         raise typer.Exit(-1)
 
     return ret
+
 
 @cloud_app.command()
 def configure(
@@ -177,8 +178,8 @@ def create(
         "--san",
         metavar="SUBJECT_ALTERNATIVE_NAME",
         help="Subject alternative names to include in the core system certificates. An example is the IP-address of"
-             "the device the core systems are running on. IPs should be prepended with 'ip:' and dns strings prepended "
-             "with 'dns:', for example ip:127.0.0.1 and dns:host123.example-org.com"
+        "the device the core systems are running on. IPs should be prefixed with 'ip:' and DNS strings prefixed "
+        "with 'dns:', for example ip:127.0.0.1 and dns:host123.example-org.com",
     ),
     ssl_enabled: Optional[bool] = typer.Option(
         True,
@@ -328,7 +329,7 @@ def system(
     config_file = target / "cloud_config.yaml"
 
     try:
-        add_system(
+        add_client_system(
             config_file,
             system_name,
             system_address,

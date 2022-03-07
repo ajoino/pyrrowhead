@@ -29,12 +29,6 @@ def check_mysql_volume_exists(cloud_name, org_name):
 
 
 def initialize_cloud(cloud_directory, cloud_name, organization_name):
-    # if not check_certs_exist(cloud_cert_dir, OPT_CLOUD_NAME):
-    # subprocess.run(['./mk_certs.sh'], cwd=cloud_cert_dir / 'certgen', capture_output=True)
-    with open(cloud_directory / "cloud_config.yaml") as config_file:
-        cloud_config = yaml.load(
-            config_file, Loader=yamlloader.ordereddict.CSafeLoader
-        )["cloud"]
     setup_certificates(cloud_directory / "cloud_config.yaml", "123456")
     rich_console.print(Text("Created certificates."))
     if not check_sql_initialized(cloud_directory):
@@ -42,13 +36,7 @@ def initialize_cloud(cloud_directory, cloud_name, organization_name):
         rich_console.print(Text("Initialized SQL tables."))
     if not check_mysql_volume_exists(cloud_name, organization_name):
         subprocess.run(
-            [
-                "docker",
-                "volume",
-                "create",
-                "--name",
-                f"mysql.{cloud_name}.{organization_name}",
-            ],
+            f"docker volume create --name mysql.{cloud_name}.{organization_name}".split(),
             capture_output=True,
         )
         rich_console.print(Text("Created docker volume."))

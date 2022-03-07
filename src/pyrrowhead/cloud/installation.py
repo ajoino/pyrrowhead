@@ -9,7 +9,7 @@ from rich.text import Text
 from pyrrowhead.cloud.file_generators import generate_all_files
 from pyrrowhead.cloud.initialize_cloud import initialize_cloud
 from pyrrowhead import rich_console
-from pyrrowhead.utils import get_config, set_config
+from pyrrowhead.utils import get_config, set_config, PyrrowheadError
 
 
 def install_cloud(config_file_path, installation_target):
@@ -24,9 +24,9 @@ def install_cloud(config_file_path, installation_target):
                 config_file, Loader=yamlloader.ordereddict.CSafeLoader
             )["cloud"]
         except (TypeError, KeyError):
-            raise typer.BadParameter("Malformed configuration file")
+            raise PyrrowheadError("Malformed configuration file")
 
-    with rich_console.status(Text("Installing an Arrowhead local cloud...")):
+    with rich_console.status(Text("Installing Arrowhead local cloud...")):
         generate_all_files(cloud_config, config_file_path, installation_target)
         initialize_cloud(
             installation_target,
@@ -40,7 +40,7 @@ def uninstall_cloud(
     installation_target, complete=False, keep_root=False, keep_sysop=False
 ):
     if not (installation_target / "cloud_config.yaml").exists():
-        typer.BadParameter(
+        PyrrowheadError(
             f"{installation_target} does not contain an Arrowhead local cloud."
         )
 

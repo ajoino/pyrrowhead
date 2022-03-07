@@ -17,7 +17,7 @@ from pyrrowhead.database_config.passwords import db_passwords
 from pyrrowhead import database_config
 from pyrrowhead import certificate_generation
 from pyrrowhead import rich_console
-from pyrrowhead.types import ConfigDict, CloudDict
+from pyrrowhead.types_ import ConfigDict, CloudDict
 
 yaml_safedump = partial(yaml.dump, Dumper=yamlloader.ordereddict.CSafeDumper)
 
@@ -141,10 +141,10 @@ def generate_all_files(cloud_config, yaml_path, target_path):
     # Copy files that need not be generated
     with path(database_config, "initSQL.sh") as init_sql_path:
         shutil.copy(init_sql_path, target_path)
-    with path(certificate_generation, "lib_certs.sh") as lib_cert_path:
-        shutil.copy(lib_cert_path, target_path / "certgen")
-    with path(certificate_generation, "rm_certs.sh") as rm_certs_path:
-        shutil.copy(rm_certs_path, target_path / "certgen")
+    # with path(certificate_generation, "lib_certs.sh") as lib_cert_path:
+    #    shutil.copy(lib_cert_path, target_path / "certgen")
+    # with path(certificate_generation, "rm_certs.sh") as rm_certs_path:
+    #    shutil.copy(rm_certs_path, target_path / "certgen")
     # Copy the config file
     try:
         shutil.copy(yaml_path.absolute(), target_path)

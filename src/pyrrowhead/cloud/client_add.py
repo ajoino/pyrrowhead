@@ -12,7 +12,7 @@ from rich.text import Text
 from rich.syntax import Syntax
 
 from pyrrowhead import rich_console
-from pyrrowhead.types import ConfigDict, CloudDict, ClientSystemDict
+from pyrrowhead.types_ import ConfigDict, CloudDict, ClientSystemDict
 from pyrrowhead.constants import CLOUD_CONFIG_FILE_NAME
 
 
@@ -24,7 +24,7 @@ def find_first_missing(ints: List[int], start: int, stop: int) -> int:
     return i
 
 
-def add_system(
+def add_client_system(
     config_file_path: Path,
     system_name: str,
     system_address: Optional[str],
@@ -50,13 +50,13 @@ def add_system(
         addr = system_address
 
     id = system_name
-    port = system_port
+    port = 5000
 
     if (client_systems := cloud_config["client_systems"]) is not None:
         taken_ports = [
             sys["port"]
             for sys in cloud_config["client_systems"].values()
-            if sys["address"] == addr and sys["system_name"] == system_name
+            if sys["address"] == addr
         ]
 
         if system_name in client_systems:
@@ -90,7 +90,7 @@ def add_system(
     }
 
     if system_additional_addresses is not None:
-        system_dict["san"] = system_additional_addresses
+        system_dict["sans"] = system_additional_addresses
 
     if cloud_config["client_systems"] is None:
         cloud_config["client_systems"] = {}

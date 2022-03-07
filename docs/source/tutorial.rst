@@ -16,17 +16,17 @@ Then, to create a new local cloud, run
 
 .. code-block:: bash
 
-   pyrrowhead cloud setup test_cloud.test_org
+   pyrrowhead cloud create test-cloud.test-org
 
-This will create a new local cloud ``test_cloud`` under the organization ``test_org``, where the concatenation
-``test_cloud.test_org`` is known as the cloud identifier.
+This will create a new local cloud ``test-cloud`` under the organization ``test-org``, where the concatenation
+``test-cloud.test-org`` is known as the cloud identifier.
 
 Next, we will add a producer and a consumer to the cloud configuration.
 
 .. code-block:: bash
 
-   pyrrowhead cloud client-add test_cloud.test_org -n consumer
-   pyrrowhead cloud client-add test_cloud.test_org -n provider
+   pyrrowhead cloud client-add test-cloud.test-org -n consumer
+   pyrrowhead cloud client-add test-cloud.test-org -n provider
 
 By adding these client systems to the cloud configuration we make sure that their
 corresponding certificates are generated when the cloud is installed.
@@ -35,13 +35,13 @@ necessary to start the cloud are generated) with the command.
 
 .. code-block:: bash
 
-   pyrrowhead cloud install test_cloud.test_org
+   pyrrowhead cloud install test-cloud.test-org
 
 Now we can finally start the local cloud with
 
 .. code-block:: bash
 
-   pyrrowhead cloud up test_cloud.test_org
+   pyrrowhead cloud up test-cloud.test-org
 
 When the process ends you will have your local cloud up and running!
 
@@ -69,4 +69,4 @@ Before you go on to read the :ref:`How-To guides <how-to>`, please remember to s
 
 .. code-block:: bash
 
-   pyrrowhead cloud down test_cloud.test_org
+   pyrrowhead cloud down test-cloud.test-org

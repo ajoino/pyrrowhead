@@ -16,7 +16,7 @@ from cryptography import x509
 from cryptography.x509 import Certificate, CertificateSigningRequest
 from cryptography.x509.oid import NameOID
 
-from pyrrowhead.types import ConfigDict
+from pyrrowhead.types_ import ConfigDict
 from pyrrowhead.utils import PyrrowheadError
 
 
@@ -40,13 +40,15 @@ def generate_private_key() -> RSAPrivateKey:
 
 
 def get_general_name(san_with_prefix: str) -> x509.GeneralName:
-    if san_with_prefix.startswith('ip:'):
+    if san_with_prefix.startswith("ip:"):
         return x509.IPAddress(ip_address(san_with_prefix[3:]))
-    elif san_with_prefix.startswith('dns:'):
+    elif san_with_prefix.startswith("dns:"):
         return x509.DNSName(san_with_prefix[4:])
 
-    raise PyrrowheadError("Pyrrowhead only recognizes IPs prefixed with 'ip:' or dns strings prefixed with 'dns:'"
-                          "as valid subject alternative names.")
+    raise PyrrowheadError(
+        "Pyrrowhead only recognizes IPs prefixed with 'ip:' or dns strings prefixed with 'dns:'"
+        "as valid subject alternative names."
+    )
 
 
 def generate_root_certificate() -> KeyCertPair:
@@ -223,7 +225,7 @@ def generate_client_system_certs(
                 client_system["address"],
                 cloud_cert,
                 cloud_key,
-                client_system["sans"]
+                client_system.get("sans", None),
             )
             for client_id, client_system in cloud_config["cloud"][
                 "client_systems"

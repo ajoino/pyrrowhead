@@ -7,7 +7,11 @@ from typing import Optional, List, Tuple
 
 import typer
 
-from pyrrowhead.org.initialize_org import mk_org_dir, populate_org_dir, copy_org_certificates
+from pyrrowhead.org.initialize_org import (
+    mk_org_dir,
+    populate_org_dir,
+    copy_org_certificates,
+)
 from pyrrowhead import rich_console
 from pyrrowhead.utils import (
     switch_directory,

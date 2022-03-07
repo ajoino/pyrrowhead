@@ -8,7 +8,7 @@ import yamlloader
 
 from pyrrowhead.cloud.installation import install_cloud
 from pyrrowhead.utils import get_config, set_config, PyrrowheadError
-from pyrrowhead.types import ConfigDict
+from pyrrowhead.types_ import ConfigDict
 
 
 class CloudConfiguration(str, Enum):
@@ -109,11 +109,14 @@ def create_cloud_config(
         cloud_core_services.update(insert_ips(onboarding_core, network, ip_start))
         ip_start += len(onboarding_core)
 
-    if not all(name.startswith('dns:') or name.startswith('ip:') for name in core_san):
-        raise PyrrowheadError("Subject Alternative Name must start with either 'ip:' or 'dns:'")
+    if not all(name.startswith("dns:") or name.startswith("ip:") for name in core_san):
+        raise PyrrowheadError(
+            "Subject Alternative Name must start with either 'ip:' or 'dns:'"
+        )
 
     cloud_config: ConfigDict = {
-        "cloud": OrderedDict({
+        "cloud": OrderedDict(
+            {
                 "cloud_name": cloud_name,
                 "organization_name": organization_name,
                 "ssl_enabled": ssl_enabled,
@@ -121,7 +124,8 @@ def create_cloud_config(
                 "core_san": core_san,
                 "client_systems": None,
                 "core_systems": cloud_core_services,
-            })
+            }
+        )
     }
 
     target_directory = target_directory / f"{organization_name}/{cloud_name}"

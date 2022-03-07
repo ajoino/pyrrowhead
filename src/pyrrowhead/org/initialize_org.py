@@ -27,7 +27,11 @@ def create_root_certificates(org_dir: Path, password: str) -> KeyCertPair:
 
 
 def create_org_certificates(
-    org_name: str, org_dir: Path, root_key, root_cert, password,
+    org_name: str,
+    org_dir: Path,
+    root_key,
+    root_cert,
+    password,
 ) -> KeyCertPair:
     org_cert_dir = org_dir / ORG_CERT_DIR / "crypto"
     org_cert_dir.mkdir(parents=True)
@@ -38,7 +42,9 @@ def create_org_certificates(
 
 
 def copy_org_certificates(
-    org_name: str, key_path: Path, cert_path: Optional[Path] = None,
+    org_name: str,
+    key_path: Path,
+    cert_path: Optional[Path] = None,
 ):
     org_dir = get_local_cloud_directory() / org_name
     org_cert_dir = org_dir / ORG_CERT_DIR / "crypto"

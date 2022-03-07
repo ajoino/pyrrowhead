@@ -11,7 +11,7 @@ import typer
 
 from pyrrowhead import rich_console
 from pyrrowhead.cloud.stop import stop_local_cloud
-from pyrrowhead.utils import switch_directory
+from pyrrowhead.utils import switch_directory, PyrrowheadError
 
 
 def check_server(address, port, secure, certfile, keyfile, cafile):
@@ -22,7 +22,10 @@ def check_server(address, port, secure, certfile, keyfile, cafile):
         try:
             context.load_cert_chain(certfile, keyfile)
         except OSError:
-            raise typer.Abort()
+            raise PyrrowheadError(
+                "Could not load certificates in <pyrrowhead.cloud.start.check_server>."
+            )
+
         try:
             with socket.create_connection((address, port)) as sock:
                 with context.wrap_socket(sock, server_hostname=address):
@@ -31,7 +34,6 @@ def check_server(address, port, secure, certfile, keyfile, cafile):
             ConnectionRefusedError,
             ConnectionResetError,
             OSError,
-            ssl.SSLEOFError,
         ) as e:
             return False
     else:

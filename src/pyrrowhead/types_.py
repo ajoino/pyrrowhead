@@ -6,8 +6,10 @@ class SystemDict(TypedDict):
     address: str
     port: int
 
+
 class ClientSystemDict(SystemDict):
     sans: List[str]
+
 
 class CoreSystemDict(SystemDict):
     domain: str
