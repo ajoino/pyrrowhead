@@ -6,11 +6,10 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.platform }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        platform: [ubuntu-latest]
-        python-version: [3.8, 3.9, 3.10]
+        python-version: ["3.8", "3.9", "3.10"]
 
     steps:
     - uses: actions/checkout@v1
@@ -23,6 +22,6 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install tox tox-gh-actions
     - name: Test with tox
-      run: tox -e tutorial
+      run: tox
       env:
         PLATFORM: ${{ matrix.platform }}
