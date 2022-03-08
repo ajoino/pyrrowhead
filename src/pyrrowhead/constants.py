@@ -18,7 +18,7 @@ OPT_CLOUDS_DIRECTORY = typer.Option(
     "--dir",
     "-d",
     callback=get_local_cloud_directory,
-    help="Directory of local cloud. Should only be used when a local cloud is installed outside the default path.",
+    help="Directory of local cloud. Experimental feature. Should only be used when a local cloud is installed outside the default path.",
 )
 ARG_CLOUD_IDENTIFIER = typer.Argument(
     None,
