@@ -14,6 +14,7 @@ from rich.syntax import Syntax
 from pyrrowhead import rich_console
 from pyrrowhead.types_ import ConfigDict, CloudDict, ClientSystemDict
 from pyrrowhead.constants import CLOUD_CONFIG_FILE_NAME
+from pyrrowhead.utils import PyrrowheadError
 
 
 def find_first_missing(ints: List[int], start: int, stop: int) -> int:
@@ -37,7 +38,7 @@ def add_client_system(
                 config_file, Loader=yamlloader.ordereddict.CSafeLoader
             )["cloud"]
         except (TypeError, KeyError):
-            raise RuntimeError("Malformed configuration file")
+            raise PyrrowheadError("Malformed configuration file")
 
     if system_name == cloud_config["cloud_name"]:
         raise ValueError(
@@ -49,39 +50,36 @@ def add_client_system(
     else:
         addr = system_address
 
-    id = system_name
-    port = 5000
 
-    if (client_systems := cloud_config["client_systems"]) is not None:
-        taken_ports = [
-            sys["port"]
-            for sys in cloud_config["client_systems"].values()
-            if sys["address"] == addr
-        ]
+    taken_ports = [
+        sys["port"]
+        for sys in cloud_config.get("client_systems").values()
+        if sys["address"] == addr
+    ]
+    if system_port is None or system_port in taken_ports:
+        port = find_first_missing(taken_ports, 5000, 8000)
+    else:
+        port = system_port
 
-        if system_name in client_systems:
-            id += "-" + str(
-                len(
-                    tuple(
-                        sys
-                        for sys in cloud_config["client_systems"].values()
-                        if sys["system_name"] == system_name
-                    )
-                )
-            ).rjust(3, "0")
+    id = system_name + "-" + str(
+        len(
+            tuple(
+                sys
+                for sys in cloud_config["client_systems"].values()
+                if sys["system_name"] == system_name
+            )
+        )
+    ).rjust(3, "0")
 
-        if system_port is None or system_port not in taken_ports:
-            port = find_first_missing(taken_ports, 5000, 8000)
-
-        for sys in client_systems.values():
-            if (
-                sys["system_name"] == system_name
-                and sys["address"] == addr
-                and sys["port"] == port
-            ):
-                raise ValueError(
-                    f'Client system with name "{system_name}", address {addr}, and port {port} already exists'
-                )
+    for sys in cloud_config.get("client_systems").values():
+        if (
+            sys["system_name"] == system_name
+            and sys["address"] == addr
+            and sys["port"] == port
+        ):
+            raise ValueError(
+                f'Client system with name "{system_name}", address {addr}, and port {port} already exists'
+            )
 
     system_dict: ClientSystemDict = {
         "system_name": system_name,
@@ -91,9 +89,6 @@ def add_client_system(
 
     if system_additional_addresses is not None:
         system_dict["sans"] = system_additional_addresses
-
-    if cloud_config["client_systems"] is None:
-        cloud_config["client_systems"] = {}
 
     cloud_config["client_systems"][id] = system_dict
     cloud_config["client_systems"] = {

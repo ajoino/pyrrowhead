@@ -336,6 +336,6 @@ def system(
             system_port,
             system_addl_addr,
         )
-    except ValueError as e:
+    except PyrrowheadError as e:
         rich_console.print(str(e))
-        raise typer.Exit(-1)
+        raise typer.Exit(1)

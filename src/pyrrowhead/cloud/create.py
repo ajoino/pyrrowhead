@@ -122,7 +122,7 @@ def create_cloud_config(
                 "ssl_enabled": ssl_enabled,
                 "subnet": str(network),
                 "core_san": core_san,
-                "client_systems": None,
+                "client_systems": {},
                 "core_systems": cloud_core_services,
             }
         )
