@@ -169,8 +169,8 @@ class TestLocalCloudCreation:
         assert res.exit_code == 0
 
         res = runner.invoke(
-                app,
-                "cloud client-add test-cloud.test-org -n test-cloud -a 127.0.0.1 -p 6002".split(),
+            app,
+            "cloud client-add test-cloud.test-org -n test-cloud -a 127.0.0.1 -p 6002".split(),
         )
 
         debug_runner_output(res)
