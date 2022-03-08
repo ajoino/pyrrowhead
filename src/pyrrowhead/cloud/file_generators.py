@@ -76,7 +76,7 @@ def generate_certgen(cloud_config, target_path):
         target_file.write(certgen_content)
 
 
-def generate_docker_compose_file(cloud_config, target_path):
+def generate_docker_compose_file(cloud_config: CloudDict, target_path):
     cloud_identifier = (
         f'{cloud_config["cloud_name"]}.{cloud_config["organization_name"]}'
     )
