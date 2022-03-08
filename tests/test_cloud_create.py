@@ -168,6 +168,14 @@ class TestLocalCloudCreation:
         debug_runner_output(res)
         assert res.exit_code == 0
 
+        res = runner.invoke(
+                app,
+                "cloud client-add test-cloud.test-org -n test-cloud -a 127.0.0.1 -p 6002".split(),
+        )
+
+        debug_runner_output(res)
+        assert res.exit_code == 0
+
     def test_cloud_config_general(self, cloud_config):
 
         assert cloud_config["cloud_name"] == self.cloud_name
@@ -242,6 +250,12 @@ class TestLocalCloudCreation:
             "port": 6001,
             "sans": ["dns:test-system.test-org.com", "ip:192.168.0.1"],
         }
+        assert client_sys["test-cloud-000"] == {
+            "system_name": "test-cloud",
+            "address": "127.0.0.1",
+            "port": 6002,
+            "sans": [],
+        }
 
     def test_install_local_cloud(self, mock_pyrrowhead_path):
         res = runner.invoke(app, f"cloud install {self.cloud_identifier}".split())
@@ -275,6 +289,7 @@ class TestLocalCloudCreation:
             ],
             *[f"consumer-00{i}" for i in range(3)],
             *[f"test-system-00{i}" for i in range(2)],
+            *["test-cloud-000"],
         ]
         assert (
             path_names(cloud_cert_path)

@@ -33,23 +33,14 @@ def add_client_system(
     system_additional_addresses: Optional[List[str]],
 ):
     with open(config_file_path, "r") as config_file:
-        try:
-            cloud_config: CloudDict = yaml.load(
-                config_file, Loader=yamlloader.ordereddict.CSafeLoader
-            )["cloud"]
-        except (TypeError, KeyError):
-            raise PyrrowheadError("Malformed configuration file")
-
-    if system_name == cloud_config["cloud_name"]:
-        raise ValueError(
-            "Systems cannot share name with cloud.\nThis is a pyrrowhead restriction due to how the certificate files are named."
-        )
+        cloud_config: CloudDict = yaml.load(
+            config_file, Loader=yamlloader.ordereddict.CSafeLoader
+        )["cloud"]
 
     if system_address is None:
         addr = str(ipaddress.ip_network(cloud_config["subnet"])[1])
     else:
         addr = system_address
-
 
     taken_ports = [
         sys["port"]
@@ -61,15 +52,19 @@ def add_client_system(
     else:
         port = system_port
 
-    id = system_name + "-" + str(
-        len(
-            tuple(
-                sys
-                for sys in cloud_config["client_systems"].values()
-                if sys["system_name"] == system_name
+    id = (
+        system_name
+        + "-"
+        + str(
+            len(
+                tuple(
+                    sys
+                    for sys in cloud_config["client_systems"].values()
+                    if sys["system_name"] == system_name
+                )
             )
-        )
-    ).rjust(3, "0")
+        ).rjust(3, "0")
+    )
 
     for sys in cloud_config.get("client_systems").values():
         if (
@@ -91,12 +86,10 @@ def add_client_system(
         system_dict["sans"] = system_additional_addresses
 
     cloud_config["client_systems"][id] = system_dict
-    cloud_config["client_systems"] = {
-        key: cloud_config["client_systems"][key]
-        for key in sorted(cloud_config["client_systems"])
-    }
-
-    config_dict: ConfigDict = {"cloud": cloud_config}
 
     with open(config_file_path, "w") as config_file:
-        yaml.dump(config_dict, config_file, Dumper=yamlloader.ordereddict.CSafeDumper)
+        yaml.dump(
+            {"cloud": cloud_config},
+            config_file,
+            Dumper=yamlloader.ordereddict.CSafeDumper,
+        )
