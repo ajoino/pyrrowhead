@@ -556,17 +556,3 @@ def setup_certificates(cloud_config_path: Path, password: Optional[str]):
         root_cert,
         password,
     )
-
-
-if __name__ == "__main__":
-    with open(
-        Path.home() / "arrowhead-local-clouds/jacnil/certgen_test/cloud_config.yaml",
-        "r",
-    ) as yaml_file:
-        config = yaml.safe_load(yaml_file)
-
-    # generate_cloud_files(config, Path.home() / 'arrowhead-local-clouds/jacnil/certgen_test/')
-    setup_certificates(
-        Path.home() / "arrowhead-local-clouds/jacnil/certgen_test/cloud_config.yaml",
-        "123456",
-    )

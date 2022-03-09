@@ -20,19 +20,19 @@ runner = CliRunner()
 
 
 @pytest.fixture(scope="class")
-def pyrrowhead_tmp_path(tmp_path_factory):
-    tmp_path = tmp_path_factory.mktemp(".pyrrowhead")
+def user_tmp_path(tmp_path_factory):
+    tmp_path = tmp_path_factory.mktemp("user")
     return tmp_path
 
 
 @pytest.fixture()
-def mock_pyrrowhead_path(pyrrowhead_tmp_path, monkeypatch):
+def mock_pyrrowhead_path(user_tmp_path, monkeypatch):
     def mockreturn() -> Path:
-        return pyrrowhead_tmp_path
+        return user_tmp_path / ".pyrrowhead"
 
     monkeypatch.setattr(utils, "get_pyrrowhead_path", mockreturn)
 
-    return pyrrowhead_tmp_path
+    return user_tmp_path / ".pyrrowhead"
 
 
 def debug_runner_output(res: Result, code: int = 0):
