@@ -29,12 +29,6 @@ def set_config(config: configparser.ConfigParser):
         config.write(config_file)
 
 
-def get_local_cloud(cloud_name: str):
-    config = get_config()
-
-    return config["pyrrowhead"]["local-clouds"]
-
-
 @contextmanager
 def switch_directory(path: Path):
     origin = Path.cwd()

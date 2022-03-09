@@ -218,21 +218,16 @@ def generate_client_system_certs(
 ) -> Dict[str, KeyCertPair]:
     cloud_name = cloud_config["cloud"]["cloud_name"]
     org_name = cloud_config["cloud"]["organization_name"]
-    try:
-        return {
-            client_id: generate_system_cert(
-                f'{client_system["system_name"]}.{cloud_name}.{org_name}.arrowhead.eu',
-                client_system["address"],
-                cloud_cert,
-                cloud_key,
-                client_system.get("sans", None),
-            )
-            for client_id, client_system in cloud_config["cloud"][
-                "client_systems"
-            ].items()
-        }
-    except AttributeError:
-        return {}
+    return {
+        client_id: generate_system_cert(
+            f'{client_system["system_name"]}.{cloud_name}.{org_name}.arrowhead.eu',
+            client_system["address"],
+            cloud_cert,
+            cloud_key,
+            client_system.get("sans", None),
+        )
+        for client_id, client_system in cloud_config["cloud"]["client_systems"].items()
+    }
 
 
 def store_system_files(
