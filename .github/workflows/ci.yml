@@ -14,6 +14,16 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+    - name: Install docker (macos only)
+      uses: docker-practice/actions-setup-docker@master
+      if: matrix.os == 'macos-latest'
+    - name: Install docker-compose (macos only)
+      run: |
+        brew install docker-compose
+        mkdir -p ~/.docker/cli-plugins
+        ln -sfn /usr/local/opt/docker-compose/bin/docker-compose ~/.docker/cli-plugins/docker-compose
+        sudo docker –-help
+      if: matrix.os == 'macos-latest'
     - uses: actions/checkout@v1
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
