@@ -63,21 +63,6 @@ def generate_config_files(cloud_config: CloudDict, target_path):
             target_file.write(system_config_file)
 
 
-def generate_certgen(cloud_config, target_path):
-    env = Environment(
-        loader=PackageLoader("pyrrowhead"), autoescape=select_autoescape()
-    )
-
-    template = env.get_template("certificates/mk_certs.sh")
-
-    certgen_content = template.render(**cloud_config)
-
-    certgen_path = Path(target_path) / "certgen"
-    certgen_path.mkdir(parents=True, exist_ok=True)
-    with open(certgen_path / "mk_certs.sh", "w+") as target_file:
-        target_file.write(certgen_content)
-
-
 def generate_docker_compose_file(cloud_config: CloudDict, target_path):
     cloud_identifier = (
         f'{cloud_config["cloud_name"]}.{cloud_config["organization_name"]}'

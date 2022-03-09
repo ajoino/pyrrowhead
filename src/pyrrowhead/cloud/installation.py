@@ -14,9 +14,9 @@ from pyrrowhead.utils import get_config, set_config, PyrrowheadError
 
 def install_cloud(config_file_path, installation_target):
     if config_file_path.suffix not in {".yaml", ".yml"}:
-        raise typer.BadParameter("Configuration file must end with .yaml or .yml")
+        raise PyrrowheadError("Configuration file must end with .yaml or .yml")
     elif not config_file_path.is_file():
-        raise typer.BadParameter("Configuration file does not exist")
+        raise PyrrowheadError("Configuration file does not exist")
 
     with open(config_file_path, "r") as config_file:
         try:

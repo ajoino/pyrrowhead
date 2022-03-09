@@ -3,11 +3,9 @@ from pathlib import Path
 from typing import List, Set
 
 import pytest
-from click.testing import Result
 from typer.testing import CliRunner
 import yaml
 
-from pyrrowhead import utils
 from pyrrowhead.main import app
 from pyrrowhead.constants import (
     LOCAL_CLOUDS_SUBDIR,
@@ -15,78 +13,9 @@ from pyrrowhead.constants import (
     CONFIG_FILE,
 )
 from pyrrowhead.types_ import CloudDict
+from tests.test_integration.conftest import debug_runner_output
 
 runner = CliRunner()
-
-
-@pytest.fixture(scope="class")
-def user_tmp_path(tmp_path_factory):
-    tmp_path = tmp_path_factory.mktemp("user")
-    return tmp_path
-
-
-@pytest.fixture()
-def mock_pyrrowhead_path(user_tmp_path, monkeypatch):
-    def mockreturn() -> Path:
-        return user_tmp_path / ".pyrrowhead"
-
-    monkeypatch.setattr(utils, "get_pyrrowhead_path", mockreturn)
-
-    return user_tmp_path / ".pyrrowhead"
-
-
-def debug_runner_output(res: Result, code: int = 0):
-    if res.exit_code != code:
-        print(res.output)
-
-
-class TestTutorial:
-    def test_create_cloud(self, mock_pyrrowhead_path):
-        res = runner.invoke(app, "cloud create test-cloud.test-org".split())
-
-        debug_runner_output(res)
-        assert res.exit_code == 0
-
-    def test_client_add(self, mock_pyrrowhead_path):
-        res1 = runner.invoke(
-            app, "cloud client-add test-cloud.test-org -n consumer".split()
-        )
-        res2 = runner.invoke(
-            app, "cloud client-add test-cloud.test-org -n provider".split()
-        )
-
-        debug_runner_output(res1)
-        assert res1.exit_code == 0
-        debug_runner_output(res2)
-        assert res2.exit_code == 0
-
-    def test_client_install(self, mock_pyrrowhead_path):
-        res = runner.invoke(app, "cloud install test-cloud.test-org".split())
-
-        debug_runner_output(res)
-        assert res.exit_code == 0
-
-    def test_start_cloud(self, mock_pyrrowhead_path):
-        res = runner.invoke(app, "cloud up test-cloud.test-org".split())
-
-        debug_runner_output(res)
-        assert res.exit_code == 0
-
-    def test_systems_list(self, mock_pyrrowhead_path):
-        res = runner.invoke(app, "systems list".split())
-
-        debug_runner_output(res)
-        assert res.exit_code == 0
-
-    def test_stop_cloud(self, mock_pyrrowhead_path):
-        res = runner.invoke(app, "cloud down test-cloud.test-org".split())
-
-        debug_runner_output(res)
-        assert res.exit_code == 0
-        res = runner.invoke(app, "cloud uninstall test-cloud.test-org".split())
-
-        debug_runner_output(res)
-        assert res.exit_code == 0
 
 
 def cert_names(names: List[str]) -> Set[str]:
@@ -142,14 +71,14 @@ class TestLocalCloudCreation:
             CLOUD_CONFIG_FILE_NAME,
         ).is_file()
 
-    def test_add_client_similar(self, mock_pyrrowhead_path):
-        for _ in range(3):
-            res = runner.invoke(
-                app, "cloud client-add test-cloud.test-org -n consumer".split()
-            )
+    @pytest.mark.parametrize(
+        "args", ["cloud client-add test-cloud.test-org -n consumer"] * 3
+    )
+    def test_add_client_similar(self, mock_pyrrowhead_path, args):
+        res = runner.invoke(app, args.split())
 
-            debug_runner_output(res)
-            assert res.exit_code == 0
+        debug_runner_output(res)
+        assert res.exit_code == 0
 
     def test_add_client_all_options(self, mock_pyrrowhead_path):
         res = runner.invoke(
@@ -175,6 +104,53 @@ class TestLocalCloudCreation:
 
         debug_runner_output(res)
         assert res.exit_code == 0
+
+    def test_add_client_exact_same(self, mock_pyrrowhead_path):
+        res = runner.invoke(
+            app,
+            "cloud client-add test-cloud.test-org -n test-cloud -a 127.0.0.1 -p 6002".split(),
+        )
+
+        debug_runner_output(res, -1)
+        assert res.exit_code == -1
+
+    @pytest.mark.parametrize("sys_name", ["test_system", "tëst-sŷstẽm"])
+    def test_add_client_bad_name(self, sys_name):
+        res = runner.invoke(
+            app,
+            f"cloud client-add test-cloud.test-org -n {sys_name}".split(),
+        )
+
+        debug_runner_output(res, -1)
+        assert res.exit_code == -1
+
+    @pytest.mark.parametrize("addr", ["127:0.1.1", "400:500:600:700"])
+    def test_bad_address(self, addr):
+        res = runner.invoke(
+            app,
+            f"cloud client-add test-cloud.test-org -n bad -a {addr}".split(),
+        )
+
+        debug_runner_output(res, -1)
+        assert res.exit_code == -1
+
+    @pytest.mark.parametrize(
+        "san",
+        [
+            "ips:127.0.0.1",
+            "ip:499.200.100.154",
+            "ip:499:200.55",
+            "dna:small.medium.large",
+        ],
+    )
+    def test_add_client_bad_san(self, san):
+        res = runner.invoke(
+            app,
+            f"cloud client-add test-cloud.test-org -n bad --san {san}".split(),
+        )
+
+        debug_runner_output(res, -1)
+        assert res.exit_code == -1
 
     def test_cloud_config_general(self, cloud_config):
 
@@ -224,16 +200,25 @@ class TestLocalCloudCreation:
             "domain": "gatekeeper",
         }
 
-    def test_cloud_config_client_similar(self, cloud_config):
+    @pytest.mark.parametrize("i", list(range(3)))
+    def test_cloud_config_client_similar(self, cloud_config, i):
         client_sys = cloud_config["client_systems"]
         network = ip_network(self.ip_network)
-        for i in range(3):
-            assert client_sys[f"consumer-00{i}"] == {
-                "system_name": "consumer",
-                "address": str(network[1]),
-                "port": 5000 + i,
-                "sans": [],
-            }
+        assert client_sys[f"consumer-00{i}"] == {
+            "system_name": "consumer",
+            "address": str(network[1]),
+            "port": 5000 + i,
+            "sans": [],
+        }
+
+    def test_cloud_config_client_similar_no_extra(self, cloud_config):
+        client_sys = cloud_config["client_systems"]
+        assert (
+            len(
+                [sys for sys in client_sys.values() if sys["system_name"] == "consumer"]
+            )
+            == 3
+        )
 
     def test_cloud_config_client_all_options(self, cloud_config):
         client_sys = cloud_config["client_systems"]

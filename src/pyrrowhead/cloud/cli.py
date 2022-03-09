@@ -14,7 +14,7 @@ from pyrrowhead.utils import (
     switch_directory,
     set_active_cloud as set_active_cloud_func,
     get_config,
-    check_valid_identifier,
+    check_valid_dns,
     PyrrowheadError,
 )
 from pyrrowhead.constants import (
@@ -231,7 +231,7 @@ def create(
         )
         raise typer.Exit(-1)
 
-    if not check_valid_identifier(cloud_identifier):
+    if not check_valid_dns(cloud_identifier):
         rich_console.print(f'"{cloud_identifier}" is not a valid cloud identifier')
         raise typer.Exit(-1)
 
@@ -358,4 +358,4 @@ def system(
         )
     except PyrrowheadError as e:
         rich_console.print(str(e))
-        raise typer.Exit(1)
+        raise typer.Exit(-1)

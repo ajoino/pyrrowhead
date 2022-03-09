@@ -6,6 +6,12 @@ import yaml
 import yamlloader  # type: ignore
 
 from pyrrowhead.types_ import CloudDict, ClientSystemDict
+from pyrrowhead.utils import (
+    PyrrowheadError,
+    check_valid_dns,
+    validate_san,
+    check_valid_ip,
+)
 
 
 def find_first_missing(ints: List[int], start: int, stop: int) -> int:
@@ -28,10 +34,34 @@ def add_client_system(
             config_file, Loader=yamlloader.ordereddict.CSafeLoader
         )["cloud"]
 
-    if system_address is None:
-        addr = str(ipaddress.ip_network(cloud_config["subnet"])[1])
-    else:
+    if system_address is not None and check_valid_ip(system_address):
         addr = system_address
+    elif system_address is not None:
+        raise PyrrowheadError(
+            f"System address '{system_address}' " f"is not a valid ip address."
+        )
+    else:
+        addr = str(ipaddress.ip_network(cloud_config["subnet"])[1])
+
+    if not check_valid_dns(system_name):
+        raise PyrrowheadError(
+            f"System name '{system_name}' " f"is not a valid dns string."
+        )
+
+    if system_additional_addresses is not None:
+        for name in system_additional_addresses:
+            validate_san(name)
+
+    for sys in cloud_config.get("client_systems", {}).values():
+        if (
+            sys["system_name"] == system_name
+            and sys["address"] == system_address
+            and sys["port"] == system_port
+        ):
+            raise PyrrowheadError(
+                f'Client system with name "{system_name}", '
+                f"address {system_address}, and port {system_address} already exists"
+            )
 
     taken_ports = [
         sys["port"]
@@ -56,17 +86,6 @@ def add_client_system(
             )
         ).rjust(3, "0")
     )
-
-    for sys in cloud_config.get("client_systems", {}).values():
-        if (
-            sys["system_name"] == system_name
-            and sys["address"] == addr
-            and sys["port"] == port
-        ):
-            raise ValueError(
-                f'Client system with name "{system_name}", '
-                f"address {addr}, and port {port} already exists"
-            )
 
     system_dict: ClientSystemDict = {
         "system_name": system_name,

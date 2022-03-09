@@ -14,7 +14,7 @@ from pyrrowhead.org.initialize_org import (
 from pyrrowhead import rich_console
 from pyrrowhead.utils import (
     PyrrowheadError,
-    check_valid_identifier,
+    check_valid_dns,
 )
 from pyrrowhead.constants import (
     ARG_ORG_NAME,
@@ -29,7 +29,7 @@ def create(org_name: str = ARG_ORG_NAME):
     """
     Initializes an empty organization with name ORG_NAME.
     """
-    if not check_valid_identifier(org_name):
+    if not check_valid_dns(org_name):
         rich_console.print(
             PyrrowheadError(f'"{org_name}" is not a valid organization name.')
         )

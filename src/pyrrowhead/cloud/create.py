@@ -7,7 +7,7 @@ import yaml
 import yamlloader  # type: ignore
 
 from pyrrowhead.cloud.installation import install_cloud
-from pyrrowhead.utils import get_config, set_config, PyrrowheadError
+from pyrrowhead.utils import get_config, set_config, validate_san
 from pyrrowhead.types_ import ConfigDict
 
 
@@ -109,10 +109,8 @@ def create_cloud_config(
         cloud_core_services.update(insert_ips(onboarding_core, network, ip_start))
         ip_start += len(onboarding_core)
 
-    if not all(name.startswith("dns:") or name.startswith("ip:") for name in core_san):
-        raise PyrrowheadError(
-            "Subject Alternative Name must start with either 'ip:' or 'dns:'"
-        )
+    for name in core_san:
+        validate_san(name)
 
     cloud_config: ConfigDict = {
         "cloud": OrderedDict(  # type: ignore

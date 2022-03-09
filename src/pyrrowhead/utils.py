@@ -3,6 +3,7 @@ from pathlib import Path
 from contextlib import contextmanager
 from typing import Tuple
 import configparser
+from ipaddress import ip_address
 
 import typer
 import yaml
@@ -84,7 +85,28 @@ def get_pyrrowhead_path() -> Path:
     return Path(typer.get_app_dir(APP_NAME, force_posix=True))
 
 
-def check_valid_identifier(identifier: str):
+def validate_san(san_candidate: str):
+    if not (san_candidate.startswith("dns:") or san_candidate.startswith("ip:")):
+        raise PyrrowheadError(
+            "Subject Alternative Name must start with either 'ip:' or 'dns:'"
+        )
+    elif san_candidate.startswith("ip:"):
+        if not check_valid_ip(san_candidate[3:]):
+            raise PyrrowheadError(f"Malformed san ip: '{san_candidate}'")
+    elif san_candidate.startswith("dns:"):
+        if not check_valid_dns(san_candidate[4:]):
+            raise PyrrowheadError(f"Malformed san dns: '{san_candidate}'")
+
+
+def check_valid_ip(ip_candidate: str):
+    try:
+        ip_address(ip_candidate)
+        return True
+    except ValueError:
+        return False
+
+
+def check_valid_dns(identifier: str):
     import re
 
     identifier_re = re.compile(
