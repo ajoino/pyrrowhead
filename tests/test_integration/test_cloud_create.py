@@ -1,3 +1,4 @@
+import string
 from ipaddress import ip_network
 from pathlib import Path
 from typing import List, Set
@@ -300,3 +301,80 @@ class TestLocalCloudCreation:
         assert {"privileges", "create_empty_arrowhead_db.sql"} <= set(
             path_names(sql_path)
         )
+
+
+class TestBadPyrrowheadDirSetup:
+    @pytest.fixture(autouse=True, scope="function")
+    def create_and_clear_pyrrowhead_path(self, mock_pyrrowhead_path):
+        if not mock_pyrrowhead_path.exists():
+            mock_pyrrowhead_path.mkdir()
+        yield
+        for p in mock_pyrrowhead_path.iterdir():
+            if p.is_file():
+                p.unlink()
+            if p.is_dir():
+                p.rmdir()
+
+    def populate_with_garbage(self, path, num_files):
+        for name in string.ascii_lowercase[:num_files]:
+            with open(path / f"{name}.txt", "w") as name_file:
+                name_file.write("nothing")
+
+    def test_empty_existing_dir(self, mock_pyrrowhead_path):
+        res = runner.invoke(app, f"cloud --help".split())
+
+        debug_runner_output(res)
+        assert res.exit_code == 0
+
+    def test_single_wrong_file(self, mock_pyrrowhead_path):
+        mock_pyrrowhead_path.joinpath("a.txt").touch()
+
+        res = runner.invoke(
+            app,
+            f"cloud --help".split(),
+        )
+
+        debug_runner_output(res, -1)
+        assert res.exit_code == -1
+
+    def test_single_wrong_dir(self, mock_pyrrowhead_path):
+        mock_pyrrowhead_path.joinpath("abcdefgo").mkdir()
+
+        res = runner.invoke(app, f"cloud --help".split())
+
+        debug_runner_output(res, -1)
+        assert res.exit_code == -1
+
+    def test_too_many_files(self, mock_pyrrowhead_path):
+        self.populate_with_garbage(mock_pyrrowhead_path, 3)
+
+        res = runner.invoke(app, f"cloud --help".split())
+
+        debug_runner_output(res, -1)
+        assert res.exit_code == -1
+
+    def test_two_wrong_files(self, mock_pyrrowhead_path):
+        self.populate_with_garbage(mock_pyrrowhead_path, 2)
+
+        res = runner.invoke(app, f"cloud --help".split())
+
+        debug_runner_output(res, -1)
+        assert res.exit_code == -1
+
+    def test_dir_correct_file_wrong(self, mock_pyrrowhead_path):
+        self.populate_with_garbage(mock_pyrrowhead_path, 1)
+        mock_pyrrowhead_path.joinpath(LOCAL_CLOUDS_SUBDIR).mkdir()
+
+        res = runner.invoke(app, f"cloud --help".split())
+
+        debug_runner_output(res, -1)
+        assert res.exit_code == -1
+
+    def test_file_correct_dir_wrong(self, mock_pyrrowhead_path):
+        mock_pyrrowhead_path.joinpath("cloud_config.yaml").touch()
+        mock_pyrrowhead_path.joinpath("abcdefgo").mkdir()
+
+        res = runner.invoke(app, f"cloud --help".split())
+
+        debug_runner_output(res, -1)
+        assert res.exit_code == -1

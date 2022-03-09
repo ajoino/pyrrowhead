@@ -2,7 +2,9 @@ from pathlib import Path
 from typing import Tuple
 import configparser
 
-from pyrrowhead import utils
+import typer
+
+from pyrrowhead import utils, rich_console
 from pyrrowhead.constants import APP_NAME, LOCAL_CLOUDS_SUBDIR, CONFIG_FILE
 
 
@@ -23,25 +25,30 @@ def _setup_pyrrowhead():
         return
 
     if not path_exists:
-        print("Initializing pyrrowhead directory.")
+        rich_console.print("Initializing pyrrowhead directory.")
         pyrrowhead_path.mkdir()
-    if len(list(pyrrowhead_path.iterdir())) > 2:
-        raise RuntimeError(
+    elif len(list(pyrrowhead_path.iterdir())) == 0:
+        rich_console.print("Empty pyrrowhead directory found.")
+    elif len(list(pyrrowhead_path.iterdir())) > 2 or not (
+        config_exists and cloud_dir_exists
+    ):
+        rich_console.print(
             "Pyrrowhead directory contains unknown objects, initialization aborted."
         )
+        raise typer.Exit(-1)
+
     if not config_exists and not cloud_dir_exists:
-        print("Initializing config file.")
+        rich_console.print("Initializing config file.")
         config[APP_NAME] = {}
         config[LOCAL_CLOUDS_SUBDIR] = {}
         utils.set_config(config)
-
-        print("Initializing empty local cloud directory.")
+        rich_console.print("Initializing empty local cloud directory.")
         pyrrowhead_path.joinpath(LOCAL_CLOUDS_SUBDIR).mkdir()
     elif config_exists and not cloud_dir_exists:
-        print("Initializing empty local cloud directory.")
+        rich_console.print("Initializing empty local cloud directory.")
         pyrrowhead_path.joinpath(LOCAL_CLOUDS_SUBDIR).mkdir()
     elif not config_exists and cloud_dir_exists:
-        print("Initializing config file.")
+        rich_console.print("Initializing config file.")
         for org_path in pyrrowhead_path.joinpath(LOCAL_CLOUDS_SUBDIR).iterdir():
             for cloud_path in org_path.iterdir():
                 config["local-clouds"][
@@ -50,4 +57,4 @@ def _setup_pyrrowhead():
 
         utils.set_config(config)
 
-    print("Initialization completed.")
+    rich_console.print("Initialization completed.")
