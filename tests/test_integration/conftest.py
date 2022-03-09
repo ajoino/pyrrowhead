@@ -25,3 +25,4 @@ def mock_pyrrowhead_path(user_tmp_path, monkeypatch):
 def debug_runner_output(res: Result, code: int = 0):
     if res.exit_code != code:
         print(res.output)
+        print(res.exception)
