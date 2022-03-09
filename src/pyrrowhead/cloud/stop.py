@@ -12,3 +12,4 @@ def stop_local_cloud(cloud_directory: Path):
     with switch_directory(cloud_directory):
         with rich_console.status(Text("Stopping local cloud...")):
             output = subprocess.run(["docker-compose", "down"], capture_output=True)
+        rich_console.print(Text("Local cloud Stopped."))

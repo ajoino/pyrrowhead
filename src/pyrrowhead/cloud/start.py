@@ -55,9 +55,8 @@ def check_returncode(output, status, cloud_directory: Path = Path.cwd()):
     if output.returncode != 0:
         rich_console.print(Text("Encountered an error during startup: "))
         rich_console.print(Text(output.stderr.decode()))
-        status.update(Text("Stopping local cloud..."))
+        status.stop()
         stop_local_cloud(cloud_directory)
-        rich_console.print(Text("Local cloud Stopped."))
         raise typer.Abort()
 
 
