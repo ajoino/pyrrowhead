@@ -6,10 +6,11 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
+        os: ["ubuntu-latest", "macos-latest"]
         python-version: ["3.8", "3.9", "3.10"]
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v1
@@ -22,9 +23,9 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install tox tox-gh-actions
     - name: Test with tox
-      run: tox -e py38 py39 py310
+      run: tox
       env:
-        PLATFORM: ${{ matrix.platform }}
+        PLATFORM: ${{ matrix.os }}
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v2
 
