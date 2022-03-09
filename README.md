@@ -1,58 +1,25 @@
 # Pyrrowhead - The CLI local cloud management tool!
 
-Pyrrowhead is a work-in-progress command line tool for managing local clouds.
+[![CI](https://github.com/ajoino/pyrrowhead/actions/workflows/ci.yml/badge.svg)](https://github.com/ajoino/pyrrowhead/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/ajoino/pyrrowhead/branch/main/graph/badge.svg?token=E9OR4SEIKS)](https://codecov.io/gh/ajoino/pyrrowhead)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
+[![pypi](https://img.shields.io/pypi/v/pyrrowhead)](https://pypi.org/project/pyrrowhead/)
+[![python](https://img.shields.io/pypi/pyversions/pyrrowhead)](https://pypi.org/project/pyrrowhead/)
+[![readthedocs](https://img.shields.io/readthedocs/pyrrowhead)](https://pyrrowhead.readthedocs.io/en/latest/)
 
-It currently provides functionalities for setup, installation/uninstallation and configuration of local clouds.
+Pyrrowhead is a command line tool for creating and managing Arrowhead local clouds.
 
-Install it with `pip install pyrrowhead` and try it out with
-```shell
-pyrrowhead --help
+
+Install it with `pip install pyrrowhead` and create your first local cloud as simple as
+```bash
+pyrrowhead cloud create hello-cloud.world
+```
+This will create a cloud called `hello-cloud` under an organization called world.
+
+Pyrrowhead utilizes the Arrowhead docker containers to run local clouds, for example:
+```bash
+pyrrowhead cloud up hello-cloud.world
 ```
 
-This tool is designed to use the Arrowhead docker containers and is currently only tested locally on Ubuntu.
-
-## Functionalities
-
-Before trying these steps, please create and go to an empty directory.
-
-### Setup
-
-Set up a local cloud configuration file with 
-```shell
-pyrrowhead setup <local cloud directory> <cloud name> <company name>
-```
-
-### Installation
-
-Then install the local cloud with
-```shell
-pyrrowhead install cloud_config.yaml
-```
-
-### Configuration
-
-Change local cloud to run in insecure mode with
-```shell
-pyrrowhead configure --disable-ssl
-```
-
-### Starting the cloud
-
-Run local cloud with docker-compose
-```shell
-docker-compose up -d
-```
-
-### Stopping the cloud
-
-Stop the cloud with docker-compose again
-```shell
-docker-compose down
-```
-
-### Uninstallation
-
-When finished, uninstall the local cloud
-```shell
-pyrrowhead uninstall .
-```
+Check out the [tutorial](https://pyrrowhead.readthedocs.io/en/latest/tutorial.html) for more information.
