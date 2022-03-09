@@ -10,7 +10,7 @@ import ipaddress
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 import yaml
-import yamlloader
+import yamlloader  # type: ignore
 from rich.text import Text
 
 from pyrrowhead.database_config.passwords import db_passwords
@@ -116,7 +116,7 @@ def generate_docker_compose_file(cloud_config: CloudDict, target_path):
     for core_system, config in cloud_config["core_systems"].items():
         core_name = config["domain"]
         cloud_name = cloud_config["cloud_name"]
-        docker_compose_content["services"][core_name] = {
+        docker_compose_content["services"][core_name] = {  # type: ignore
             "container_name": f"{core_name}.{cloud_identifier}",
             "image": f"svetlint/{core_name}:4.3.0",
             "depends_on": [f"mysql.{cloud_identifier}"],

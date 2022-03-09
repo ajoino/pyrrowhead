@@ -2,7 +2,7 @@ import subprocess
 from pathlib import Path
 from ipaddress import ip_address, IPv4Address, IPv6Address
 from datetime import datetime, timedelta
-from typing import Tuple, List, Optional, Dict, Iterable, NamedTuple, Mapping
+from typing import Tuple, List, Optional, Dict, Iterable, NamedTuple, Mapping, cast
 
 import yaml
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -87,7 +87,7 @@ def generate_root_certificate() -> KeyCertPair:
 def generate_ca_signing_request(
     common_name: str,
     ca: bool,
-    path_length: int,
+    path_length: Optional[int],
 ) -> Tuple[RSAPrivateKey, CertificateSigningRequest]:
     key = generate_private_key()
 
@@ -117,7 +117,7 @@ def generate_system_signing_request(
 ) -> Tuple[RSAPrivateKey, CertificateSigningRequest]:
     key = generate_private_key()
 
-    general_names = []
+    general_names: List[x509.GeneralName] = []
     if ip is not None:
         general_names.append(x509.IPAddress(ip_address(ip)))
     if sans is not None:
@@ -421,7 +421,7 @@ def generate_cloud_files(
     cloud_cert: Certificate,
     org_cert: Certificate,
     root_cert: Certificate,
-    password: Optional[str],
+    password: str,
 ):
     cloud_name = cloud_config["cloud"]["cloud_name"]
     org_name = cloud_config["cloud"]["organization_name"]
@@ -475,7 +475,7 @@ def generate_cloud_files(
     store_truststore(cloud_cert, cloud_cert_dir, password)
 
 
-def setup_certificates(cloud_config_path: Path, password: Optional[str]):
+def setup_certificates(cloud_config_path: Path, password: str):
     with open(cloud_config_path, "r") as cloud_config_file:
         cloud_config: ConfigDict = yaml.safe_load(cloud_config_file)
 
@@ -500,10 +500,14 @@ def setup_certificates(cloud_config_path: Path, password: Optional[str]):
                 )
             else:
                 with open(root_cert_dir / "root.p12", "rb") as root_p12:
-                    root_key, root_cert, *_ = load_p12(root_p12.read(), password)
+                    root_key, root_cert, *_ = load_p12(root_p12.read(), password.encode())  # type: ignore
+                    if not isinstance(root_key, RSAPrivateKey) or not isinstance(
+                        root_cert, Certificate
+                    ):
+                        raise PyrrowheadError("Could not open root key or certificate")
 
             org_cert_dir.mkdir(parents=True)
-            org_key, org_cert = generate_and_store_org_files(
+            org_key, org_cert = generate_and_store_org_files(  # type: ignore
                 org_name,
                 org_cert_dir,
                 root_key,
@@ -512,11 +516,15 @@ def setup_certificates(cloud_config_path: Path, password: Optional[str]):
             )
         else:
             with open(org_cert_dir / f"{org_name}.p12", "rb") as org_p12:
-                org_key, org_cert, ca_certs = load_p12(
+                org_key, org_cert, ca_certs = load_p12(  # type: ignore
                     org_p12.read(), password.encode()
                 )
+                if not isinstance(org_key, RSAPrivateKey) or not isinstance(
+                    org_cert, Certificate
+                ):
+                    raise PyrrowheadError("Could not read org key or certificate")
                 if len(ca_certs) != 1:
-                    raise RuntimeError(
+                    raise PyrrowheadError(
                         f"Organization certificate can only have one CA, currently has {len(ca_certs)}."
                     )
                 root_cert = ca_certs[0]
@@ -533,7 +541,7 @@ def setup_certificates(cloud_config_path: Path, password: Optional[str]):
         )
     else:
         with open(cloud_cert_dir / f"{cloud_name}.p12", "rb") as cloud_cert_file:
-            cloud_key, cloud_cert, ca_certs = load_p12(
+            cloud_key, cloud_cert, ca_certs = load_p12(  # type: ignore
                 cloud_cert_file.read(), password.encode()
             )
             if len(ca_certs) != 2:

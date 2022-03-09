@@ -22,7 +22,7 @@ class CloudDict(TypedDict):
     subnet: str
     core_san: List[str]
     core_systems: Dict[str, CoreSystemDict]
-    client_systems: Optional[Dict[str, ClientSystemDict]]
+    client_systems: Dict[str, ClientSystemDict]
 
 
 class ConfigDict(TypedDict):

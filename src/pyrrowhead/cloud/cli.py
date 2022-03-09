@@ -32,12 +32,15 @@ cloud_app = typer.Typer(
 
 
 def decide_cloud_directory(
-    cloud_identifier: str,
-    cloud_name: str,
-    organization_name: str,
+    cloud_identifier: Optional[str],
+    cloud_name: Optional[str],
+    organization_name: Optional[str],
     clouds_directory: Path,
 ) -> Tuple[Path, str]:
-    if len(split_cloud_identifier := cloud_identifier.split(".")) == 2:
+    if (
+        isinstance(cloud_identifier, str)
+        and len(split_cloud_identifier := cloud_identifier.split(".")) == 2
+    ):
         ret = (
             clouds_directory.joinpath(
                 *[part for part in reversed(split_cloud_identifier)]
@@ -49,7 +52,7 @@ def decide_cloud_directory(
             clouds_directory.joinpath(organization_name, cloud_name),
             f"{cloud_name}.{organization_name}",
         )
-    elif cloud_identifier != "":
+    elif isinstance(cloud_identifier, str) and cloud_identifier != "":
         ret = (clouds_directory, cloud_identifier)
     else:
         rich_console.print("Could not decide local cloud.")
@@ -206,10 +209,25 @@ def create(
 
     CLOUD_NAME and ORG_name are the cloud and organization names used in the generated certificates.
     """
-    if cloud_identifier:
-        cloud_name, organization_name = cloud_identifier.split(".")
-    if not cloud_identifier:
+    if not cloud_identifier and not cloud_name and not organization_name:
+        rich_console.print(
+            "You must either provide the 'CLOUD_IDENTIFIER' argument or both the "
+            "'CLOUD_NAME' and 'ORG_NAME' options."
+        )
+        raise typer.Exit(-1)
+    if (
+        cloud_identifier is None
+        and cloud_name is not None
+        and organization_name is not None
+    ):
         cloud_identifier = ".".join((cloud_name, organization_name))
+    elif cloud_identifier is not None:
+        cloud_name, organization_name = cloud_identifier.split(".")
+    else:
+        rich_console.print(
+            "CLOUD_IDENTIFIER, or CLOUD_NAME or ORG_NAME are of unknown types."
+        )
+        raise typer.Exit(-1)
 
     if not check_valid_identifier(cloud_identifier):
         rich_console.print(f'"{cloud_identifier}" is not a valid cloud identifier')

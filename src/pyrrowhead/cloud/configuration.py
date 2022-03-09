@@ -2,7 +2,7 @@ from pathlib import Path
 
 import typer
 import yaml
-import yamlloader
+import yamlloader  # type: ignore
 
 from pyrrowhead import rich_console
 

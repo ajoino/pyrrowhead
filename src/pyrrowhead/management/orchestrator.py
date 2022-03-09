@@ -235,8 +235,12 @@ def add_orchestration_rule(
         ) = get_ids_from_service_definition(
             service_definition, service_interface, *provider_system
         )
-        add_authorization_rule(
-            consumer_id, provider_id, interface_id, service_definition_id
+        add_authorization_rule(  # type: ignore
+            consumer_id,
+            provider_id,
+            interface_id,
+            service_definition_id
+            # TODO: mypy complains here, remove ignore and fix later
         )
 
     try:

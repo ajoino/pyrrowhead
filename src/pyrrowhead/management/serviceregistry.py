@@ -38,7 +38,7 @@ def add_service(
     uri: str,
     interface: str,
     access_policy: AccessPolicy,
-    system: Optional[Tuple[str, str, int]],
+    system: Tuple[str, str, int],
 ):
     active_cloud_directory = get_active_cloud_directory()
     sr_address, sr_port, secure, scheme = get_core_system_address_and_port(

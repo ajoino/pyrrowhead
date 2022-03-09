@@ -4,7 +4,7 @@ from enum import Enum
 import ipaddress
 
 import yaml
-import yamlloader
+import yamlloader  # type: ignore
 
 from pyrrowhead.cloud.installation import install_cloud
 from pyrrowhead.utils import get_config, set_config, PyrrowheadError
@@ -115,7 +115,7 @@ def create_cloud_config(
         )
 
     cloud_config: ConfigDict = {
-        "cloud": OrderedDict(
+        "cloud": OrderedDict(  # type: ignore
             {
                 "cloud_name": cloud_name,
                 "organization_name": organization_name,

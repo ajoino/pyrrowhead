@@ -3,7 +3,7 @@ import subprocess
 
 import typer
 import yaml
-import yamlloader
+import yamlloader  # type: ignore
 from rich.text import Text
 
 from pyrrowhead.cloud.file_generators import generate_all_files

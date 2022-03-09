@@ -7,7 +7,7 @@ from collections import OrderedDict
 
 import typer
 import yaml
-import yamlloader
+import yamlloader  # type: ignore
 from rich.text import Text
 from rich.syntax import Syntax
 
@@ -44,7 +44,7 @@ def add_client_system(
 
     taken_ports = [
         sys["port"]
-        for sys in cloud_config.get("client_systems").values()
+        for sys in cloud_config.get("client_systems", {}).values()
         if sys["address"] == addr
     ]
     if system_port is None or system_port in taken_ports:
@@ -66,7 +66,7 @@ def add_client_system(
         ).rjust(3, "0")
     )
 
-    for sys in cloud_config.get("client_systems").values():
+    for sys in cloud_config.get("client_systems", {}).values():
         if (
             sys["system_name"] == system_name
             and sys["address"] == addr
@@ -80,6 +80,7 @@ def add_client_system(
         "system_name": system_name,
         "address": addr,
         "port": port,
+        "sans": [],
     }
 
     if system_additional_addresses is not None:

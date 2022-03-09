@@ -5,7 +5,7 @@ import subprocess
 import time
 
 import yaml
-import yamlloader
+import yamlloader  # type: ignore
 from rich.text import Text
 import typer
 

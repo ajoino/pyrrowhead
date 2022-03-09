@@ -1,7 +1,5 @@
 import subprocess
 
-import yaml
-import yamlloader.ordereddict
 from rich.text import Text
 
 from pyrrowhead import rich_console

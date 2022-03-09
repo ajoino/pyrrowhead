@@ -39,7 +39,7 @@ def post_service(
     if json:
         resp = requests.post(url, json=json, cert=certkey, verify=ca_path)
     elif text:
-        resp = requests.post(url, text=text, cert=certkey, verify=ca_path)
+        resp = requests.post(url, data=text, cert=certkey, verify=ca_path)
     else:
         resp = requests.post(url, cert=certkey, verify=ca_path)
     return resp

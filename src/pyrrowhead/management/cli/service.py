@@ -120,8 +120,8 @@ def add_service_cli(
         metavar="ACCESS_POLICY",
         help='Must be one of three values: "NOT_SECURE", ' '"CERTIFICATE", or "TOKEN"',
     ),
-    system: Optional[Tuple[str, str, int]] = typer.Option(
-        (None, None, None),
+    system: Tuple[str, str, int] = typer.Option(
+        ...,
         show_default=False,
         metavar="SYSTEM_NAME ADDRESS PORT",
         help="Provider system definition.",
