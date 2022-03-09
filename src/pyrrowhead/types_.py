@@ -1,4 +1,4 @@
-from typing import Dict, TypedDict, Optional, List
+from typing import Dict, TypedDict, List
 
 
 class SystemDict(TypedDict):

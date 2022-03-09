@@ -45,9 +45,10 @@ def add_orchestration_rule_cli(
         consumer_id = serviceregistry.get_system_id_from_name(*consumer)
     else:
         rich_console.print(
-            "No consumer information given, you must provide Pyrrowhead with either the "
-            "consumer id (--consumer-id), consumer name (--consumer-name) or full consumer "
-            "information (--consumer-system)."
+            "No consumer information given, you must provide "
+            "Pyrrowhead with either the consumer id (--consumer-id), "
+            "consumer name (--consumer-name) or "
+            "full consumer information (--consumer-system)."
         )
 
     if consumer_id == -1:
@@ -55,7 +56,8 @@ def add_orchestration_rule_cli(
         raise typer.Exit()
     if consumer_id == -2:
         rich_console.print(
-            f"Multiple candidate systems found for consumer {consumer[0]}, please specify address and port"
+            f"Multiple candidate systems found for consumer {consumer[0]}, "
+            f"please specify address and port"
         )
         raise typer.Exit()
 

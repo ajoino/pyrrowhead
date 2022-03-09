@@ -34,13 +34,13 @@ def check_server(address, port, secure, certfile, keyfile, cafile):
             ConnectionRefusedError,
             ConnectionResetError,
             OSError,
-        ) as e:
+        ):
             return False
     else:
         try:
             with socket.create_connection((address, port)) as sock:
                 return True
-        except (ConnectionRefusedError, ConnectionResetError, OSError) as e:
+        except (ConnectionRefusedError, ConnectionResetError, OSError):
             return False
 
 
@@ -67,9 +67,9 @@ def start_local_cloud(cloud_directory: Path):
     org_name = cloud_config["cloud"]["organization_name"]
     ssl_enabled = cloud_config["cloud"]["ssl_enabled"]
 
-    sysop_certfile = (cloud_directory / f"certs/crypto/sysop.crt").absolute()
-    sysop_keyfile = (cloud_directory / f"certs/crypto/sysop.key").absolute()
-    sysop_cafile = (cloud_directory / f"certs/crypto/sysop.ca").absolute()
+    sysop_certfile = (cloud_directory / "certs/crypto/sysop.crt").absolute()
+    sysop_keyfile = (cloud_directory / "certs/crypto/sysop.key").absolute()
+    sysop_cafile = (cloud_directory / "certs/crypto/sysop.ca").absolute()
     core_systems = cloud_config["cloud"]["core_systems"]
 
     with switch_directory(cloud_directory):

@@ -2,10 +2,6 @@ from enum import Enum
 from pathlib import Path
 
 import typer
-import yaml
-from rich.text import Text
-
-from pyrrowhead import rich_console
 
 
 class AccessPolicy(str, Enum):

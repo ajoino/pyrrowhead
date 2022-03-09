@@ -1,8 +1,8 @@
 import subprocess
 from pathlib import Path
-from ipaddress import ip_address, IPv4Address, IPv6Address
+from ipaddress import ip_address
 from datetime import datetime, timedelta
-from typing import Tuple, List, Optional, Dict, Iterable, NamedTuple, Mapping, cast
+from typing import Tuple, List, Optional, Dict, NamedTuple
 
 import yaml
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -46,7 +46,8 @@ def get_general_name(san_with_prefix: str) -> x509.GeneralName:
         return x509.DNSName(san_with_prefix[4:])
 
     raise PyrrowheadError(
-        "Pyrrowhead only recognizes IPs prefixed with 'ip:' or dns strings prefixed with 'dns:'"
+        "Pyrrowhead only recognizes IPs prefixed with 'ip:' "
+        "or dns strings prefixed with 'dns:'"
         "as valid subject alternative names."
     )
 
@@ -203,7 +204,8 @@ def generate_core_system_certs(
     org_name = cloud_config["cloud"]["organization_name"]
     return {
         core_system["system_name"]: generate_system_cert(
-            common_name=f'{core_system["system_name"]}.{cloud_name}.{org_name}.arrowhead.eu',
+            common_name=f'{core_system["system_name"]}.'
+            f"{cloud_name}.{org_name}.arrowhead.eu",
             ip=core_system["address"],
             issuer_cert=cloud_cert,
             issuer_key=cloud_key,
@@ -452,7 +454,7 @@ def generate_cloud_files(
             continue
         store_system_files(
             core_cert,
-            core_cert_path,
+            core_cert_path,  # noqa
             root_cert,
             org_cert,
             cloud_cert,
@@ -466,7 +468,7 @@ def generate_cloud_files(
             continue
         store_system_files(
             client_cert,
-            client_cert_path,
+            client_cert_path,  # noqa
             root_cert,
             org_cert,
             cloud_cert,
@@ -500,7 +502,9 @@ def setup_certificates(cloud_config_path: Path, password: str):
                 )
             else:
                 with open(root_cert_dir / "root.p12", "rb") as root_p12:
-                    root_key, root_cert, *_ = load_p12(root_p12.read(), password.encode())  # type: ignore
+                    root_key, root_cert, *_ = load_p12(  # type: ignore
+                        root_p12.read(), password.encode()
+                    )  # noqa
                     if not isinstance(root_key, RSAPrivateKey) or not isinstance(
                         root_cert, Certificate
                     ):
@@ -525,7 +529,8 @@ def setup_certificates(cloud_config_path: Path, password: str):
                     raise PyrrowheadError("Could not read org key or certificate")
                 if len(ca_certs) != 1:
                     raise PyrrowheadError(
-                        f"Organization certificate can only have one CA, currently has {len(ca_certs)}."
+                        f"Organization certificate can only have one CA, "
+                        f"currently has {len(ca_certs)}."
                     )
                 root_cert = ca_certs[0]
 
@@ -546,7 +551,8 @@ def setup_certificates(cloud_config_path: Path, password: str):
             )
             if len(ca_certs) != 2:
                 raise RuntimeError(
-                    f"Cloud cert must have exactly two CAs, currently have {len(ca_certs)}."
+                    f"Cloud cert must have exactly two CAs, "
+                    f"currently have {len(ca_certs)}."
                 )
             org_cert, root_cert = ca_certs
 

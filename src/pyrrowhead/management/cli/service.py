@@ -55,11 +55,12 @@ def services_list_cli(
 
     Services shown can be filtered by service definition or system. More information about the
     services can be seen with the -usc flags. The raw json data is accessed by the -r flag.
-    """
+    """  # noqa
     exclusive_options = (service_definition, system_name, system_id)
     if len(list(option for option in exclusive_options if option is not None)) > 1:
         raise RuntimeError(
-            "Only one of the options <--service-definition, --system-name, --system-id> may be used."
+            "Only one of the options <--service-definition, --system-name, --system-id>"
+            " may be used."
         )
 
     try:
@@ -98,8 +99,8 @@ def inspect_service_cli(
 
     if status >= 400:
         rich_console.print(
-            f"Error occured when trying to inspect service with id {service_id} due to: "
-            f'{response_data["exceptionType"]}, {response_data["errorMessage"]}'
+            f"Error occured when trying to inspect service with id {service_id} due to:"
+            f' {response_data["exceptionType"]}, {response_data["errorMessage"]}'
         )
         raise typer.Exit(-1)
 

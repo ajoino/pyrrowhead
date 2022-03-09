@@ -78,7 +78,8 @@ def get_ids_from_service_definition(
         rich_console.print(
             f"Could not find interface {interface_name} for service "
             f"{service_definition} in provider {provider_name}@{address}:{port}, "
-            f'available interfaces are {", ".join(interface["interfaceName"] for interface in interfaces)}'
+            f"available interfaces are "
+            f'{", ".join(interface["interfaceName"] for interface in interfaces)}'
         )
         raise typer.Exit()
     return service_definition_id, interface_id, provider_id
@@ -201,8 +202,8 @@ def add_orchestration_rule(
         "orchestrator",
         active_cloud_directory,
     )
-    cloud_name = active_cloud_directory.name
-    org_name = active_cloud_directory.parents[0].name
+    # cloud_name = active_cloud_directory.name
+    # org_name = active_cloud_directory.parents[0].name
 
     orchestration_input = [
         {
@@ -235,8 +236,8 @@ def add_orchestration_rule(
         ) = get_ids_from_service_definition(
             service_definition, service_interface, *provider_system
         )
-        add_authorization_rule(  # type: ignore
-            consumer_id,
+        add_authorization_rule(
+            consumer_id,  # type: ignore
             provider_id,
             interface_id,
             service_definition_id

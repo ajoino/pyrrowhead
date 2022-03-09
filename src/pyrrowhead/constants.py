@@ -18,7 +18,9 @@ OPT_CLOUDS_DIRECTORY = typer.Option(
     "--dir",
     "-d",
     callback=get_local_cloud_directory,
-    help="Directory of local cloud. Experimental feature. Should only be used when a local cloud is installed outside the default path.",
+    help="Directory of local cloud. Experimental feature. "
+    "Should only be used when a local cloud is "
+    "installed outside the default path.",
 )
 ARG_CLOUD_IDENTIFIER = typer.Argument(
     None,
@@ -37,11 +39,13 @@ OPT_CLOUD_NAME = typer.Option(
     None,
     "--cloud",
     "-c",
-    help="CLOUD_NAME. Mandatory with option -o and mutually exclusive with argument CLOUD_IDENTIFIER",
+    help="CLOUD_NAME. Mandatory with option -o and "
+    "mutually exclusive with argument CLOUD_IDENTIFIER",
 )
 OPT_ORG_NAME = typer.Option(
     None,
     "--org",
     "-o",
-    help="ORG_NAME. Mandatory with option -c and mutually exclusive with argument CLOUD_IDENTIFIER",
+    help="ORG_NAME. Mandatory with option -c and "
+    "mutually exclusive with argument CLOUD_IDENTIFIER",
 )

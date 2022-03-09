@@ -166,7 +166,8 @@ def create_service_table(
     for service in response_data["data"]:
         row_data = [
             str(service["id"]),
-            f'{service["serviceDefinition"]["serviceDefinition"]}  (id: {service["serviceDefinition"]["id"]})',
+            f'{service["serviceDefinition"]["serviceDefinition"]}  '
+            f'(id: {service["serviceDefinition"]["id"]})',
             service["interfaces"][0]["interfaceName"],
         ]
 
@@ -176,7 +177,8 @@ def create_service_table(
             row_data.append(service["secure"])
         if show_system:
             row_data.append(
-                f'{service["provider"]["systemName"]}  (id: {service["provider"]["id"]})'
+                f'{service["provider"]["systemName"]}  '
+                f'(id: {service["provider"]["id"]})'
             )
         service_table.add_row(*row_data)
 
@@ -237,7 +239,7 @@ def render_service(response_data):
         (f'Service URI: {response_data["serviceUri"]}'),
         (
             f"Interfaces: [bright_yellow]\n\t"
-            f'{tab_break.join(interface["interfaceName"] for interface in response_data["interfaces"])}'
+            f'{tab_break.join(interface["interfaceName"] for interface in response_data["interfaces"])}'  # noqa
             f"[/bright_yellow]"
         ),
         (f'Access policy: [orange3]{response_data["secure"]}[/orange3]'),
@@ -250,16 +252,20 @@ def render_service(response_data):
             f'{tab_break}Port: {provider["port"]}'
         ),
         (
-            f'End of validity: [red]{response_data.get("endOfValidity", "[green]Always valid[/green]")}[/red]'
+            f"End of validity: [red]"
+            f'{response_data.get("endOfValidity", "[green]Always valid[/green]")}'
+            f"[/red]"
         ),
     )
     if metadata := response_data.get("metadata"):
         render_group.renderables.append(
-            f'Metadata: {tab_break} {tab_break.join(f"{name}: {value}" for name, value in metadata.items())}'
+            f"Metadata: {tab_break} "
+            f'{tab_break.join(f"{name}: {value}" for name, value in metadata.items())}'
         )
     rich_console.print(
         (
-            f' Service "{response_data["serviceDefinition"]["serviceDefinition"]}" (id: {response_data["id"]})'
+            f' Service "{response_data["serviceDefinition"]["serviceDefinition"]}" '
+            f'(id: {response_data["id"]})'
         ),
         Panel(render_group, box=box.HORIZONTALS, expand=False),
     )

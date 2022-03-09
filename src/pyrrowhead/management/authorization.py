@@ -39,7 +39,8 @@ def add_authorization_rule(
         "serviceDefinitionIds": [service_definition_id],
     }
 
-    response_data = post_service(
+    # TODO: use the response data
+    response_data = post_service(  # noqa
         f"{scheme}://{address}:{port}/authorization/mgmt/intracloud/",
         active_cloud_directory,
         json=rule_message,
@@ -65,24 +66,6 @@ def create_authorization_table(response_data):
         box=box.HORIZONTALS,
     )
 
-    """
-    if show_service_uri:
-        service_table.add_column(
-                header='Service URI',
-                style='bright_yellow'
-        )
-    if show_access_policy:
-        service_table.add_column(
-                header='Access Policy',
-                style='orange3',
-        )
-    if show_system:
-        service_table.add_column(
-                header='System',
-                style='blue',
-        )
-    """
-
     for auth_rule in response_data["data"]:
         row_data = [
             str(auth_rule["id"]),
@@ -96,15 +79,6 @@ def create_authorization_table(response_data):
             f'(id: {auth_rule["interfaces"][0]["id"]})',
         ]
 
-        """
-        if show_service_uri:
-            row_data.append(service['serviceUri'])
-        if show_access_policy:
-            row_data.append(service['secure'])
-        if show_system:
-            row_data.append(f'{service["provider"]["systemName"]}  (id: {service["provider"]["id"]})')
-        service_table.add_row(*row_data)
-        """
         auth_table.add_row(*row_data)
 
     return auth_table

@@ -117,7 +117,7 @@ def install(
     Installs cloud by creating certificate files and core service configuration files.
 
     CLOUD_NAME and ORG_name are the cloud and organization names used in the generated certificates.
-    """
+    """  # noqa
     target, cloud_identifier = decide_cloud_directory(
         cloud_identifier,
         cloud_name,
@@ -129,7 +129,8 @@ def install(
 
     if not target.exists():
         raise RuntimeError(
-            "Target cloud is not set up properly, run `pyrrowhead cloud setup` before installing cloud."
+            "Target cloud is not set up properly,"
+            " run `pyrrowhead cloud setup` before installing cloud."
         )
 
     install_cloud(config_file, target)
@@ -153,7 +154,7 @@ def uninstall(
     Keeps the cloud_config.yaml file by default.
 
     CLOUD_NAME and ORG_name are the cloud and organization names used in the generated certificates.
-    """
+    """  # noqa
     target, cloud_identifier = decide_cloud_directory(
         cloud_identifier,
         cloud_name,
@@ -180,8 +181,9 @@ def create(
         None,
         "--san",
         metavar="SUBJECT_ALTERNATIVE_NAME",
-        help="Subject alternative names to include in the core system certificates. An example is the IP-address of"
-        "the device the core systems are running on. IPs should be prefixed with 'ip:' and DNS strings prefixed "
+        help="Subject alternative names to include in the core system certificates."
+        " An example is the IP-address of the device the core systems are running"
+        " on. IPs should be prefixed with 'ip:' and DNS strings prefixed "
         "with 'dns:', for example ip:127.0.0.1 and dns:host123.example-org.com",
     ),
     ssl_enabled: Optional[bool] = typer.Option(
@@ -208,7 +210,7 @@ def create(
     Sets up local clouds by creating a folder structure and cloud_config.yaml file.
 
     CLOUD_NAME and ORG_name are the cloud and organization names used in the generated certificates.
-    """
+    """  # noqa
     if not cloud_identifier and not cloud_name and not organization_name:
         rich_console.print(
             "You must either provide the 'CLOUD_IDENTIFIER' argument or both the "
@@ -275,7 +277,7 @@ def up(
 
     This command might take a while if this is the first time starting a local cloud on this machine
     as docker needs to pull the images.
-    """
+    """  # noqa
     target, cloud_identifier = decide_cloud_directory(
         cloud_identifier,
         cloud_name,

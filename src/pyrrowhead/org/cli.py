@@ -2,8 +2,7 @@
 This module is work-in-progress.
 """
 from pathlib import Path
-import shutil
-from typing import Optional, List, Tuple
+from typing import Optional
 
 import typer
 
@@ -14,18 +13,11 @@ from pyrrowhead.org.initialize_org import (
 )
 from pyrrowhead import rich_console
 from pyrrowhead.utils import (
-    switch_directory,
-    set_active_cloud as set_active_cloud_func,
-    get_config,
     PyrrowheadError,
     check_valid_identifier,
 )
 from pyrrowhead.constants import (
-    OPT_CLOUDS_DIRECTORY,
-    OPT_CLOUD_NAME,
-    OPT_ORG_NAME,
     ARG_ORG_NAME,
-    ARG_CLOUD_IDENTIFIER,
 )
 
 

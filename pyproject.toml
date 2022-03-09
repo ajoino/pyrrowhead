@@ -12,3 +12,7 @@ target-version = ['py38']
 [tool.coverage.run]
 branch = true
 source = ["pyrrowhead", "tests/"]
+
+[tool.mypy]
+python_version = "3.8"
+ignore_missing_imports = true

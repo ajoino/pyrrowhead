@@ -34,7 +34,8 @@ def initialize_cloud(cloud_directory, cloud_name, organization_name):
         rich_console.print(Text("Initialized SQL tables."))
     if not check_mysql_volume_exists(cloud_name, organization_name):
         subprocess.run(
-            f"docker volume create --name mysql.{cloud_name}.{organization_name}".split(),
+            f"docker volume create --name mysql.{cloud_name}."
+            f"{organization_name}".split(),
             capture_output=True,
         )
         rich_console.print(Text("Created docker volume."))

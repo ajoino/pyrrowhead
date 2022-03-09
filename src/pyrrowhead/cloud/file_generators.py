@@ -15,9 +15,8 @@ from rich.text import Text
 
 from pyrrowhead.database_config.passwords import db_passwords
 from pyrrowhead import database_config
-from pyrrowhead import certificate_generation
 from pyrrowhead import rich_console
-from pyrrowhead.types_ import ConfigDict, CloudDict
+from pyrrowhead.types_ import CloudDict
 
 yaml_safedump = partial(yaml.dump, Dumper=yamlloader.ordereddict.CSafeDumper)
 
@@ -39,7 +38,10 @@ def generate_config_files(cloud_config: CloudDict, target_path):
     sr_port = core_systems["service_registry"]["port"]
 
     for system, config in core_systems.items():
-        system_cn = f'{config["system_name"]}.{cloud_config["cloud_name"]}.{cloud_config["organization_name"]}.arrowhead.eu'
+        system_cn = (
+            f'{config["system_name"]}.{cloud_config["cloud_name"]}.'
+            f'{cloud_config["organization_name"]}.arrowhead.eu'
+        )
         template = env.get_template(f"core_system_config/{system}.properties")
 
         system_config_file = template.render(
@@ -115,13 +117,14 @@ def generate_docker_compose_file(cloud_config: CloudDict, target_path):
 
     for core_system, config in cloud_config["core_systems"].items():
         core_name = config["domain"]
-        cloud_name = cloud_config["cloud_name"]
+        # cloud_name = cloud_config["cloud_name"]
         docker_compose_content["services"][core_name] = {  # type: ignore
             "container_name": f"{core_name}.{cloud_identifier}",
             "image": f"svetlint/{core_name}:4.3.0",
             "depends_on": [f"mysql.{cloud_identifier}"],
             "volumes": [
-                f"./core_system_config/{core_system}.properties:/{core_name}/application.properties",
+                f"./core_system_config/{core_system}.properties:/"
+                f"{core_name}/application.properties",
                 f"./certs/crypto/{core_system}.p12:/{core_name}/{core_system}.p12",
                 f"./certs/crypto/truststore.p12:/{core_name}/truststore.p12",
             ],

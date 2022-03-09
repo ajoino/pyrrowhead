@@ -1,0 +1,15 @@
+name: Docs
+
+on:
+  push:
+    paths:
+      - 'src/pyrrowhead'
+      - 'tests/'
+  pull_request:
+    paths:
+      - 'src/pyrrowhead'
+      - 'tests/'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
