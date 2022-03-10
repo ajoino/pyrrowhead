@@ -133,7 +133,11 @@ def install(
             " run `pyrrowhead cloud setup` before installing cloud."
         )
 
-    install_cloud(config_file, target)
+    try:
+        install_cloud(config_file, target)
+    except PyrrowheadError as e:
+        rich_console.print(e)
+        raise typer.Exit(-1)
 
 
 @cloud_app.command()

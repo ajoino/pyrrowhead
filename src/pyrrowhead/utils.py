@@ -8,6 +8,8 @@ from ipaddress import ip_address
 import typer
 import yaml
 
+from pyrrowhead.types_ import CloudDict
+
 
 class PyrrowheadError(Exception):
     pass
@@ -115,3 +117,8 @@ def check_valid_dns(identifier: str):
     )
 
     return identifier_re.search(identifier) is not None
+
+
+def validate_cloud_config(cloud_config: CloudDict) -> bool:
+    required_keys = CloudDict.__annotations__.keys()
+    return set(cloud_config.keys()) == set(required_keys)

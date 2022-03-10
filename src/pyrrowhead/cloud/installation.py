@@ -9,7 +9,12 @@ from rich.text import Text
 from pyrrowhead.cloud.file_generators import generate_all_files
 from pyrrowhead.cloud.initialize_cloud import initialize_cloud
 from pyrrowhead import rich_console
-from pyrrowhead.utils import get_config, set_config, PyrrowheadError
+from pyrrowhead.utils import (
+    get_config,
+    set_config,
+    PyrrowheadError,
+    validate_cloud_config,
+)
 
 
 def install_cloud(config_file_path, installation_target):
@@ -24,7 +29,12 @@ def install_cloud(config_file_path, installation_target):
                 config_file, Loader=yamlloader.ordereddict.CSafeLoader
             )["cloud"]
         except (TypeError, KeyError):
-            raise PyrrowheadError("Malformed configuration file")
+            raise PyrrowheadError("Malformed configuration file: Missing field 'cloud'")
+        else:
+            if not validate_cloud_config(cloud_config):
+                raise PyrrowheadError(
+                    "Malformed configuration file:" "Missing cloud key(s)"
+                )
 
     with rich_console.status(Text("Installing Arrowhead local cloud...")):
         generate_all_files(cloud_config, config_file_path, installation_target)

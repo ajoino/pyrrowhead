@@ -305,10 +305,12 @@ class TestLocalCloudCreation:
 
 class TestBadPyrrowheadDirSetup:
     @pytest.fixture(autouse=True, scope="function")
-    def create_and_clear_pyrrowhead_path(self, mock_pyrrowhead_path):
+    def create_and_clear_pyrrowhead_path(self, mock_pyrrowhead_path, request):
         if not mock_pyrrowhead_path.exists():
             mock_pyrrowhead_path.mkdir()
         yield
+        if "noautofixt" in request.keywords:
+            return
         for p in mock_pyrrowhead_path.iterdir():
             if p.is_file():
                 p.unlink()
@@ -371,10 +373,39 @@ class TestBadPyrrowheadDirSetup:
         assert res.exit_code == -1
 
     def test_file_correct_dir_wrong(self, mock_pyrrowhead_path):
-        mock_pyrrowhead_path.joinpath("cloud_config.yaml").touch()
+        mock_pyrrowhead_path.joinpath(CONFIG_FILE).touch()
         mock_pyrrowhead_path.joinpath("abcdefgo").mkdir()
 
         res = runner.invoke(app, f"cloud --help".split())
 
         debug_runner_output(res, -1)
+        assert res.exit_code == -1
+
+    @pytest.mark.parametrize(
+        "key",
+        [
+            "cloud_name",
+            "organization_name",
+            "ssl_enabled",
+            "subnet",
+            "core_san",
+            "client_systems",
+            "core_systems",
+        ],
+    )
+    @pytest.mark.noautofixt
+    def test_bad_cloud_config_missing_keys(self, mock_pyrrowhead_path, key):
+        res = runner.invoke(app, "cloud create test.test".split())
+        cloud_config_path = mock_pyrrowhead_path.joinpath(
+            LOCAL_CLOUDS_SUBDIR, "test", "test", CLOUD_CONFIG_FILE_NAME
+        )
+        with open(cloud_config_path, "r") as config_fd:
+            config = yaml.safe_load(config_fd)
+        del config["cloud"][key]
+        with open(cloud_config_path, "w") as config_fd:
+            yaml.dump(config, config_fd)
+
+        res = runner.invoke(app, "cloud install test.test".split())
+
+        debug_runner_output(res, 1)
         assert res.exit_code == -1

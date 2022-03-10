@@ -1,0 +1,31 @@
+version: "3"
+
+cloud:
+  cloud_name: test
+  company_name: ltu
+  ssl_enabled: true
+
+  test_provider:
+    system_name: test_provider
+    address: 127.0.0.1
+    port: 7655
+  test_consumer:
+    system_name: test_consumer
+    address: 127.0.0.1
+    port: 7656
+  service_registry:
+    system_name: service_registry
+    address: 127.0.0.1
+    domain: serviceregistry
+    port: 8443
+  orchestrator:
+    system_name: orchestrator
+    address: 127.0.0.1
+    domain: orchestrator
+    port: 8441
+  authorization:
+    system_name: authorization
+    address: 127.0.0.1
+    domain: authorization
+    port: 8445
+
