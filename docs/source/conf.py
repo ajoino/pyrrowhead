@@ -22,7 +22,7 @@ copyright = '2021-2022, Jacob Nilsson'
 author = 'Jacob Nilsson'
 
 # The full version, including alpha/beta/rc tags
-release = '0.5.0b'
+release = '0.5.1b'
 
 
 # -- General configuration ---------------------------------------------------
