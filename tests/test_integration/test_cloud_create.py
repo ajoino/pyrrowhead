@@ -305,6 +305,26 @@ class TestLocalCloudCreation:
         )
 
 
+class TestBadCreateInput:
+    def test_no_arguments(self, mock_pyrrowhead_path):
+        ret = runner.invoke(app, "cloud create".split())
+
+        debug_runner_output(ret, -1)
+        assert ret.exit_code == -1
+
+    def test_cloud_name_only(self, mock_pyrrowhead_path):
+        ret = runner.invoke(app, "cloud create -c test-cloud".split())
+
+        debug_runner_output(ret, -1)
+        assert ret.exit_code == -1
+
+    def test_org_name_only(self, mock_pyrrowhead_path):
+        ret = runner.invoke(app, "cloud create -o test-org".split())
+
+        debug_runner_output(ret, -1)
+        assert ret.exit_code == -1
+
+
 class TestBadPyrrowheadDirSetup:
     @pytest.fixture(autouse=True, scope="function")
     def create_and_clear_pyrrowhead_path(self, mock_pyrrowhead_path, request):

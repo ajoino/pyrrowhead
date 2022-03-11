@@ -53,8 +53,6 @@ def decide_cloud_directory(
             clouds_directory.joinpath(organization_name, cloud_name),
             f"{cloud_name}.{organization_name}",
         )
-    elif isinstance(cloud_identifier, str) and cloud_identifier != "":
-        ret = (clouds_directory, cloud_identifier)
     else:
         rich_console.print("Could not decide local cloud.")
         raise typer.Exit(-1)
