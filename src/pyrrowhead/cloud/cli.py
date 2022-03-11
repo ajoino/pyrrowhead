@@ -22,6 +22,7 @@ from pyrrowhead.constants import (
     OPT_CLOUD_NAME,
     OPT_ORG_NAME,
     ARG_CLOUD_IDENTIFIER,
+    CLOUD_CONFIG_FILE_NAME,
 )
 
 cloud_app = typer.Typer(
@@ -125,13 +126,7 @@ def install(
         cloud_directory,
     )
 
-    config_file = target / "cloud_config.yaml"
-
-    if not target.exists():
-        raise RuntimeError(
-            "Target cloud is not set up properly,"
-            " run `pyrrowhead cloud setup` before installing cloud."
-        )
+    config_file = target / CLOUD_CONFIG_FILE_NAME
 
     try:
         install_cloud(config_file, target)

@@ -19,7 +19,7 @@ def get_config() -> configparser.ConfigParser:
     from pyrrowhead.constants import CONFIG_FILE
 
     config = configparser.ConfigParser()
-    with open(get_pyrrowhead_path().joinpath(CONFIG_FILE), "r") as config_file:
+    with open(get_pyrrowhead_path() / CONFIG_FILE, "r") as config_file:
         config.read_file(config_file)
 
     return config

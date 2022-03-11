@@ -1,7 +1,7 @@
 import shutil
 import subprocess
+from typing import Optional
 
-import typer
 import yaml
 import yamlloader  # type: ignore
 from rich.text import Text
@@ -9,6 +9,7 @@ from rich.text import Text
 from pyrrowhead.cloud.file_generators import generate_all_files
 from pyrrowhead.cloud.initialize_cloud import initialize_cloud
 from pyrrowhead import rich_console
+from pyrrowhead.types_ import CloudDict
 from pyrrowhead.utils import (
     get_config,
     set_config,
@@ -18,23 +19,23 @@ from pyrrowhead.utils import (
 
 
 def install_cloud(config_file_path, installation_target):
-    if config_file_path.suffix not in {".yaml", ".yml"}:
-        raise PyrrowheadError("Configuration file must end with .yaml or .yml")
-    elif not config_file_path.is_file():
-        raise PyrrowheadError("Configuration file does not exist")
+    if not config_file_path.is_file():
+        raise PyrrowheadError(
+            "Target cloud is not set up properly,"
+            " run `pyrrowhead cloud setup` before installing cloud."
+        )
 
     with open(config_file_path, "r") as config_file:
-        try:
-            cloud_config = yaml.load(
-                config_file, Loader=yamlloader.ordereddict.CSafeLoader
-            )["cloud"]
-        except (TypeError, KeyError):
-            raise PyrrowheadError("Malformed configuration file: Missing field 'cloud'")
-        else:
-            if not validate_cloud_config(cloud_config):
-                raise PyrrowheadError(
-                    "Malformed configuration file:" "Missing cloud key(s)"
-                )
+        cloud_config: Optional[CloudDict] = yaml.load(
+            config_file, Loader=yamlloader.ordereddict.CSafeLoader
+        ).get("cloud")
+
+    if cloud_config is None:
+        raise PyrrowheadError(
+            "Malformed cloud configuration file: Missing cloud information."
+        )
+    elif not validate_cloud_config(cloud_config):
+        raise PyrrowheadError("Malformed configuration file:" "Missing cloud key(s)")
 
     with rich_console.status(Text("Installing Arrowhead local cloud...")):
         generate_all_files(cloud_config, config_file_path, installation_target)
@@ -50,8 +51,9 @@ def uninstall_cloud(
     installation_target, complete=False, keep_root=False, keep_sysop=False
 ):
     if not (installation_target / "cloud_config.yaml").exists():
-        PyrrowheadError(
-            f"{installation_target} does not contain an Arrowhead local cloud."
+        raise PyrrowheadError(
+            "Target cloud is not set up properly,"
+            " run `pyrrowhead cloud setup` before installing cloud."
         )
 
     with open(installation_target / "cloud_config.yaml") as config_file:
@@ -80,4 +82,3 @@ def uninstall_cloud(
         (installation_target / "initSQL.sh").unlink()
     subprocess.run(["docker", "volume", "rm", f"mysql.{cloud_name}.{org_name}"])
     rich_console.print("Uninstallation complete")
-    raise typer.Exit()
