@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from contextlib import contextmanager
-from typing import Tuple
+from typing import Tuple, Optional
 import configparser
 from ipaddress import ip_address
 
@@ -75,7 +75,7 @@ def get_core_system_address_and_port(
     return address, port, secure, scheme
 
 
-def get_local_cloud_directory(dir: Path) -> Path:
+def get_local_cloud_directory(dir: Optional[Path] = None) -> Path:
     from pyrrowhead.constants import LOCAL_CLOUDS_SUBDIR
 
     if dir is not None:

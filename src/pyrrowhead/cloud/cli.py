@@ -38,6 +38,11 @@ def decide_cloud_directory(
     organization_name: Optional[str],
     clouds_directory: Path,
 ) -> Tuple[Path, str]:
+    if cloud_identifier and any((cloud_name, organization_name)):
+        rich_console.print(
+            "CLOUD_IDENTIFIER and [CLOUD_NAME and ORG_NAME] are " "mutually exclusive."
+        )
+        raise typer.Exit(-1)
     if (
         isinstance(cloud_identifier, str)
         and len(split_cloud_identifier := cloud_identifier.split(".")) == 2
@@ -54,11 +59,14 @@ def decide_cloud_directory(
             f"{cloud_name}.{organization_name}",
         )
     else:
-        rich_console.print("Could not decide local cloud.")
+        rich_console.print(
+            "Could not decide local cloud. "
+            "Did you forget to provide CLOUD_NAME or ORG_NAME?"
+        )
         raise typer.Exit(-1)
 
     if not ret[0].exists():
-        rich_console.print(f'Could not find local cloud "{cloud_identifier}"')
+        rich_console.print(f'Could not find local cloud "{ret[1]}"')
         raise typer.Exit(-1)
 
     return ret

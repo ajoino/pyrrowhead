@@ -6,7 +6,7 @@ from click.testing import Result
 from pyrrowhead import utils
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(autouse=True, scope="class")
 def user_tmp_path(tmp_path_factory):
     tmp_path = tmp_path_factory.mktemp("user")
     return tmp_path
