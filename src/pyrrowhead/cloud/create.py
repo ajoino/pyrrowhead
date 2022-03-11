@@ -132,9 +132,6 @@ def create_cloud_config(
 
     target_directory = target_directory / f"{organization_name}/{cloud_name}"
 
-    if not target_directory.is_absolute():
-        target_directory = target_directory.expanduser()
-
     if not target_directory.exists():
         Path.mkdir(target_directory, parents=True)
 

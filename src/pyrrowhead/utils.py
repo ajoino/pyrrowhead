@@ -75,8 +75,12 @@ def get_core_system_address_and_port(
     return address, port, secure, scheme
 
 
-def get_local_cloud_directory() -> Path:
+def get_local_cloud_directory(dir: Path) -> Path:
     from pyrrowhead.constants import LOCAL_CLOUDS_SUBDIR
+
+    if dir is not None:
+        print("The '-d' option is currently not in use.")
+        raise typer.Exit(-1)
 
     return get_pyrrowhead_path().joinpath(LOCAL_CLOUDS_SUBDIR)
 

@@ -393,21 +393,14 @@ class TestCreateInputOptions:
         )
 
         debug_runner_output(ret)
-        assert ret.exit_code == 0
-
-        ret = runner.invoke(
-            app, f"cloud install test-cloud-path.test-org-path -d {tmp_path}"
-        )
-
-        debug_runner_output(ret)
-        assert ret.exit_code == 0
+        assert ret.exit_code == -1
 
     def test_relative_target_dir(self, mock_pyrrowhead_path, tmp_path):
         p = tmp_path.relative_to(tmp_path.parents[0])
-        ret = runner.invoke(app, f"cloud create test-cloud-path.test-org-path -d {p}")
+        ret = runner.invoke(app, f"cloud create test-cloud-abs.test-org-abs -d {p}")
 
-        debug_runner_output(ret)
-        assert ret.exit_code == 0
+        debug_runner_output(ret, -1)
+        assert ret.exit_code == -1
 
 
 class TestBadPyrrowheadDirSetup:
