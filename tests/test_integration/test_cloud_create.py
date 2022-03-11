@@ -328,6 +328,22 @@ class TestBadPyrrowheadDirSetup:
         debug_runner_output(res)
         assert res.exit_code == 0
 
+    def test_only_config_exists(self, mock_pyrrowhead_path):
+        res = runner.invoke(app, f"cloud --help".split())
+
+        mock_pyrrowhead_path.joinpath(LOCAL_CLOUDS_SUBDIR).rmdir()
+
+        debug_runner_output(res)
+        assert res.exit_code == 0
+
+    def test_only_dir_exists(self, mock_pyrrowhead_path):
+        res = runner.invoke(app, f"cloud --help".split())
+
+        mock_pyrrowhead_path.joinpath(CONFIG_FILE).unlink()
+
+        debug_runner_output(res)
+        assert res.exit_code == 0
+
     def test_single_wrong_file(self, mock_pyrrowhead_path):
         mock_pyrrowhead_path.joinpath("a.txt").touch()
 
