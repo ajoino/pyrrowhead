@@ -95,7 +95,8 @@ def validate_san(san_candidate: str):
     elif san_candidate.startswith("ip:"):
         if not check_valid_ip(san_candidate[3:]):
             raise PyrrowheadError(f"Malformed san ip: '{san_candidate}'")
-    elif san_candidate.startswith("dns:"):
+    else:
+        # san_candidate.startswith("dns:"):
         if not check_valid_dns(san_candidate[4:]):
             raise PyrrowheadError(f"Malformed san dns: '{san_candidate}'")
 

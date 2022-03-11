@@ -25,8 +25,9 @@ def test_simple_password():
     [
         "id:127.0.0.1",
         "bad:127.0.0.1",
-        "dnd:hob.goblin",
         "ip:127.0.0:1",
+        "dnd:hob.goblin",
+        "dns:owl_bear",
     ],
 )
 def test_get_general_name_bad(san):
