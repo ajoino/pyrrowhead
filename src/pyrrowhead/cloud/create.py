@@ -7,7 +7,7 @@ import yaml
 import yamlloader  # type: ignore
 
 from pyrrowhead.cloud.installation import install_cloud
-from pyrrowhead.utils import get_config, set_config, validate_san
+from pyrrowhead.utils import get_config, set_config, validate_san, PyrrowheadError
 from pyrrowhead.types_ import ConfigDict
 
 
@@ -28,7 +28,11 @@ def create_cloud_config(
     do_install,
     include,
 ):
-    network = ipaddress.ip_network(ip_subnet)
+    try:
+        network = ipaddress.ip_network(ip_subnet)
+    except ValueError:
+        raise PyrrowheadError(f"Invalid ip network '{ip_subnet}'")
+
     mandatory_core_systems = OrderedDict(
         {
             "service_registry": {

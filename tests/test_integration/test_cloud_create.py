@@ -305,7 +305,7 @@ class TestLocalCloudCreation:
         )
 
 
-class TestBadCreateInput:
+class TestCreateInputOptions:
     def test_no_arguments(self, mock_pyrrowhead_path):
         ret = runner.invoke(app, "cloud create".split())
 
@@ -320,6 +320,50 @@ class TestBadCreateInput:
 
     def test_org_name_only(self, mock_pyrrowhead_path):
         ret = runner.invoke(app, "cloud create -o test-org".split())
+
+        debug_runner_output(ret, -1)
+        assert ret.exit_code == -1
+
+    def test_org_and_cloud_opts(self, mock_pyrrowhead_path):
+        ret = runner.invoke(app, "cloud create -o test-org -c test-cloud".split())
+
+        debug_runner_output(ret)
+        assert ret.exit_code == 0
+
+    def test_bad_identifier(self, mock_pyrrowhead_path):
+        ret = runner.invoke(app, "cloud create test_cloud.test_org".split())
+
+        debug_runner_output(ret, -1)
+        assert ret.exit_code == -1
+
+    def test_bad_org(self, mock_pyrrowhead_path):
+        ret = runner.invoke(app, "cloud create -o test_org -c test-cloud".split())
+
+        debug_runner_output(ret, -1)
+        assert ret.exit_code == -1
+
+    def test_bad_cloud(self, mock_pyrrowhead_path):
+        ret = runner.invoke(app, "cloud create -o test-org -c test_cloud".split())
+
+        debug_runner_output(ret, -1)
+        assert ret.exit_code == -1
+
+    def test_bad_san(self, mock_pyrrowhead_path):
+        ret = runner.invoke(
+            app,
+            "cloud create -o test-org-san -c test-cloud-san "
+            "--san dna:127:30.800.9".split(),
+        )
+
+        debug_runner_output(ret, -1)
+        assert ret.exit_code == -1
+
+    def test_bad_network(self, mock_pyrrowhead_path):
+        ret = runner.invoke(
+            app,
+            "cloud create -o test-org-ip -c test-cloud-ip "
+            "--ip-network 300.400.500.600".split(),
+        )
 
         debug_runner_output(ret, -1)
         assert ret.exit_code == -1
