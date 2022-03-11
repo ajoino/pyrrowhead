@@ -29,8 +29,9 @@ def _setup_pyrrowhead():
         pyrrowhead_path.mkdir()
     elif len(list(pyrrowhead_path.iterdir())) == 0:
         rich_console.print("Empty pyrrowhead directory found.")
-    elif len(list(pyrrowhead_path.iterdir())) > 2 or not (
-        config_exists and cloud_dir_exists
+    elif any(
+        p.name not in {LOCAL_CLOUDS_SUBDIR, CONFIG_FILE}
+        for p in pyrrowhead_path.iterdir()
     ):
         rich_console.print(
             "Pyrrowhead directory contains unknown objects, initialization aborted."

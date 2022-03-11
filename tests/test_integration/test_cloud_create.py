@@ -323,23 +323,25 @@ class TestBadPyrrowheadDirSetup:
                 name_file.write("nothing")
 
     def test_empty_existing_dir(self, mock_pyrrowhead_path):
+        mock_pyrrowhead_path.joinpath(CONFIG_FILE).touch()
+
         res = runner.invoke(app, f"cloud --help".split())
 
         debug_runner_output(res)
         assert res.exit_code == 0
 
     def test_only_config_exists(self, mock_pyrrowhead_path):
-        res = runner.invoke(app, f"cloud --help".split())
+        mock_pyrrowhead_path.joinpath(LOCAL_CLOUDS_SUBDIR).mkdir()
 
-        mock_pyrrowhead_path.joinpath(LOCAL_CLOUDS_SUBDIR).rmdir()
+        res = runner.invoke(app, f"cloud --help".split())
 
         debug_runner_output(res)
         assert res.exit_code == 0
 
     def test_only_dir_exists(self, mock_pyrrowhead_path):
-        res = runner.invoke(app, f"cloud --help".split())
+        mock_pyrrowhead_path.joinpath(CONFIG_FILE).touch()
 
-        mock_pyrrowhead_path.joinpath(CONFIG_FILE).unlink()
+        res = runner.invoke(app, f"cloud --help".split())
 
         debug_runner_output(res)
         assert res.exit_code == 0
