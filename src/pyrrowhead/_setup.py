@@ -48,11 +48,14 @@ def _setup_pyrrowhead():
     elif config_exists and not cloud_dir_exists:
         rich_console.print("Initializing empty local cloud directory.")
         pyrrowhead_path.joinpath(LOCAL_CLOUDS_SUBDIR).mkdir()
-    elif not config_exists and cloud_dir_exists:
+    else:
         rich_console.print("Initializing config file.")
+        config[APP_NAME] = {}
+        config[LOCAL_CLOUDS_SUBDIR] = {}
+        config[APP_NAME]["active-cloud"] = ""
         for org_path in pyrrowhead_path.joinpath(LOCAL_CLOUDS_SUBDIR).iterdir():
             for cloud_path in org_path.iterdir():
-                config["local-clouds"][
+                config[LOCAL_CLOUDS_SUBDIR][
                     ".".join((str(cloud_path.name), str(org_path.name)))
                 ] = str(cloud_path.absolute())
 

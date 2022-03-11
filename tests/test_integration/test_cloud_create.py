@@ -2,6 +2,7 @@ import string
 from ipaddress import ip_network
 from pathlib import Path
 from typing import List, Set
+import shutil
 
 import pytest
 from typer.testing import CliRunner
@@ -12,6 +13,7 @@ from pyrrowhead.constants import (
     LOCAL_CLOUDS_SUBDIR,
     CLOUD_CONFIG_FILE_NAME,
     CONFIG_FILE,
+    APP_NAME,
 )
 from pyrrowhead.types_ import CloudDict
 from tests.test_integration.conftest import debug_runner_output
@@ -315,7 +317,7 @@ class TestBadPyrrowheadDirSetup:
             if p.is_file():
                 p.unlink()
             if p.is_dir():
-                p.rmdir()
+                shutil.rmtree(p)
 
     def populate_with_garbage(self, path, num_files):
         for name in string.ascii_lowercase[:num_files]:
@@ -330,7 +332,7 @@ class TestBadPyrrowheadDirSetup:
         debug_runner_output(res)
         assert res.exit_code == 0
 
-    def test_only_config_exists(self, mock_pyrrowhead_path):
+    def test_only_empty_dir_exists(self, mock_pyrrowhead_path):
         mock_pyrrowhead_path.joinpath(LOCAL_CLOUDS_SUBDIR).mkdir()
 
         res = runner.invoke(app, f"cloud --help".split())
@@ -338,10 +340,31 @@ class TestBadPyrrowheadDirSetup:
         debug_runner_output(res)
         assert res.exit_code == 0
 
-    def test_only_dir_exists(self, mock_pyrrowhead_path):
+    def test_only_empty_config_exists(self, mock_pyrrowhead_path):
         mock_pyrrowhead_path.joinpath(CONFIG_FILE).touch()
 
         res = runner.invoke(app, f"cloud --help".split())
+
+        debug_runner_output(res)
+        assert res.exit_code == 0
+
+    def test_only_populated_dir_exists(self, mock_pyrrowhead_path):
+        runner.invoke(app, f"cloud create test.test".split())
+        runner.invoke(app, f"cloud create test2.test".split())
+        runner.invoke(app, f"cloud create test.test2".split())
+
+        print(list(mock_pyrrowhead_path.joinpath(LOCAL_CLOUDS_SUBDIR).iterdir()))
+        mock_pyrrowhead_path.joinpath(CONFIG_FILE).unlink()
+
+        res = runner.invoke(app, f"cloud --help".split())
+
+        from pyrrowhead import utils
+
+        config = utils.get_config()
+        assert {APP_NAME, LOCAL_CLOUDS_SUBDIR, "DEFAULT"} == set(config.keys())
+        assert {"test.test", "test2.test", "test.test2"} == set(
+            config[LOCAL_CLOUDS_SUBDIR]
+        )
 
         debug_runner_output(res)
         assert res.exit_code == 0
