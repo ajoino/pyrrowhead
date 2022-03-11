@@ -16,6 +16,7 @@ from pyrrowhead.utils import (
     PyrrowheadError,
     validate_cloud_config,
 )
+from pyrrowhead.constants import CLOUD_CONFIG_FILE_NAME
 
 
 def install_cloud(config_file_path, installation_target):
@@ -50,16 +51,25 @@ def install_cloud(config_file_path, installation_target):
 def uninstall_cloud(
     installation_target, complete=False, keep_root=False, keep_sysop=False
 ):
-    if not (installation_target / "cloud_config.yaml").exists():
+    config_path = installation_target / CLOUD_CONFIG_FILE_NAME
+
+    if not config_path.is_file():
         raise PyrrowheadError(
             "Target cloud is not set up properly,"
             " run `pyrrowhead cloud setup` before installing cloud."
         )
 
-    with open(installation_target / "cloud_config.yaml") as config_file:
-        cloud_config = yaml.load(
+    with open(config_path, "r") as config_file:
+        cloud_config: Optional[CloudDict] = yaml.load(
             config_file, Loader=yamlloader.ordereddict.CSafeLoader
-        )["cloud"]
+        ).get("cloud")
+
+    if cloud_config is None:
+        raise PyrrowheadError(
+            "Malformed cloud configuration file: Missing cloud information."
+        )
+    elif not validate_cloud_config(cloud_config):
+        raise PyrrowheadError("Malformed configuration file:" "Missing cloud key(s)")
 
     cloud_name = cloud_config["cloud_name"]
     org_name = cloud_config["organization_name"]
