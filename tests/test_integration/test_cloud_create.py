@@ -381,7 +381,7 @@ class TestCreateInputOptions:
     def test_bad_include_opt(self, mock_pyrrowhead_path):
         ret = runner.invoke(
             app,
-            "cloud create test-cloud-inc.test-org-inc " "--include tarrasquemanager",
+            "cloud create test-cloud-inc.test-org-inc --include tarrasquemanager",
         )
 
         debug_runner_output(ret, 2)
@@ -389,7 +389,7 @@ class TestCreateInputOptions:
 
     def test_absolute_target_dir(self, mock_pyrrowhead_path, tmp_path):
         ret = runner.invoke(
-            app, f"cloud create test-cloud-path.test-org-path -d {tmp_path}"
+            app, f"cloud create test-cloud-path.test-org-path -d {tmp_path}".split()
         )
 
         debug_runner_output(ret)
@@ -397,10 +397,21 @@ class TestCreateInputOptions:
 
     def test_relative_target_dir(self, mock_pyrrowhead_path, tmp_path):
         p = tmp_path.relative_to(tmp_path.parents[0])
-        ret = runner.invoke(app, f"cloud create test-cloud-abs.test-org-abs -d {p}")
+        ret = runner.invoke(
+            app, f"cloud create test-cloud-abs.test-org-abs -d {p}".split()
+        )
 
         debug_runner_output(ret, -1)
         assert ret.exit_code == -1
+
+    def test_do_install(self, mock_pyrrowhead_path):
+        ret = runner.invoke(
+            app,
+            "cloud create test-cloud-inst.test-org-inst --ip-network 172.16.10.0/24 --include eventhandler --install",
+        )
+
+        debug_runner_output(ret)
+        assert ret.exit_code == 0
 
 
 class TestBadPyrrowheadDirSetup:
