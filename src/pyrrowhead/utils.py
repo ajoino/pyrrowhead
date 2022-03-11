@@ -84,7 +84,7 @@ def get_local_cloud_directory() -> Path:
 def get_pyrrowhead_path() -> Path:
     from pyrrowhead.constants import APP_NAME
 
-    return Path(typer.get_app_dir(APP_NAME, force_posix=True))
+    return Path(typer.get_app_dir(APP_NAME))
 
 
 def validate_san(san_candidate: str):

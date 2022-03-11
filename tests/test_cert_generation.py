@@ -21,14 +21,14 @@ def test_simple_password():
 
 
 @pytest.mark.parametrize(
-    "san,exception",
+    "san",
     [
-        ("id:127.0.0.1", PyrrowheadError),
-        ("bad:127.0.0.1", PyrrowheadError),
-        ("dnd:hob.goblin", PyrrowheadError),
-        ("ip:127.0.0:1", ValueError),
+        "id:127.0.0.1",
+        "bad:127.0.0.1",
+        "dnd:hob.goblin",
+        "ip:127.0.0:1",
     ],
 )
-def test_get_general_name_bad(san, exception):
-    with pytest.raises(exception):
+def test_get_general_name_bad(san):
+    with pytest.raises(PyrrowheadError):
         get_general_name(san)
