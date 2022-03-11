@@ -368,6 +368,47 @@ class TestCreateInputOptions:
         debug_runner_output(ret, -1)
         assert ret.exit_code == -1
 
+    def test_good_include_opt(self, mock_pyrrowhead_path):
+        ret = runner.invoke(
+            app,
+            "cloud create test-cloud-inc.test-org-inc "
+            "--include eventhandler --include intercloud --include onboarding",
+        )
+
+        debug_runner_output(ret)
+        assert ret.exit_code == 0
+
+    def test_bad_include_opt(self, mock_pyrrowhead_path):
+        ret = runner.invoke(
+            app,
+            "cloud create test-cloud-inc.test-org-inc " "--include tarrasquemanager",
+        )
+
+        debug_runner_output(ret, 2)
+        assert ret.exit_code == 2
+
+    def test_absolute_target_dir(self, mock_pyrrowhead_path, tmp_path):
+        ret = runner.invoke(
+            app, f"cloud create test-cloud-path.test-org-path -d {tmp_path}"
+        )
+
+        debug_runner_output(ret)
+        assert ret.exit_code == 0
+
+        ret = runner.invoke(
+            app, f"cloud install test-cloud-path.test-org-path -d {tmp_path}"
+        )
+
+        debug_runner_output(ret)
+        assert ret.exit_code == 0
+
+    def test_relative_target_dir(self, mock_pyrrowhead_path, tmp_path):
+        p = tmp_path.relative_to(tmp_path.parents[0])
+        ret = runner.invoke(app, f"cloud create test-cloud-path.test-org-path -d {p}")
+
+        debug_runner_output(ret)
+        assert ret.exit_code == 0
+
 
 class TestBadPyrrowheadDirSetup:
     @pytest.fixture(autouse=True, scope="function")
