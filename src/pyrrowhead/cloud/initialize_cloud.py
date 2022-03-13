@@ -8,11 +8,6 @@ from pyrrowhead.new_certificate_generation.generate_certificates import (
 )
 
 
-def check_certs_exist(cloud_directory, cloud_name):
-    cert_directory = cloud_directory / f"cloud-{cloud_name}/crypto"
-    return cert_directory.is_dir() and any(cert_directory.iterdir())
-
-
 def check_sql_initialized(cloud_directory):
     return (cloud_directory / "sql/create_empty_arrowhead_db.sql").is_file()
 
