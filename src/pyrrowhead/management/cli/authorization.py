@@ -41,7 +41,7 @@ def add_authorization_cli(
     )
 
 
-@auth_app.command(name="remove")
+@auth_app.command(name="remove", hidden=True)
 def remove_authorization_cli():
     """Not implemented."""
     rich_console.print("Not implemented.")
