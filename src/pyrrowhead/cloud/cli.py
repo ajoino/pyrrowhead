@@ -57,7 +57,7 @@ def decide_cloud_directory(
         )
         raise typer.Exit(-1)
     if (
-        isinstance(cloud_identifier, str)
+        cloud_identifier is not None
         and len(split_cloud_identifier := cloud_identifier.split(".")) == 2
     ):
         ret = (

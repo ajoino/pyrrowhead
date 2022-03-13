@@ -1,50 +1,17 @@
 import shutil
 import subprocess
-from pathlib import Path
-from typing import Optional
 
-import yaml
-import yamlloader  # type: ignore
 from rich.text import Text
 
 from pyrrowhead.cloud.file_generators import generate_all_files
 from pyrrowhead.cloud.initialize_cloud import initialize_cloud
 from pyrrowhead import rich_console
-from pyrrowhead.types_ import CloudDict
 from pyrrowhead.utils import (
     get_config,
     set_config,
-    PyrrowheadError,
-    validate_cloud_config,
+    validate_cloud_config_file,
 )
 from pyrrowhead.constants import CLOUD_CONFIG_FILE_NAME
-
-
-def validate_cloud_config_file(config_file_path: Path) -> CloudDict:
-    if not config_file_path.is_file():
-        raise PyrrowheadError(
-            "Target cloud is not set up properly,"
-            " run `pyrrowhead cloud create` before installing cloud."
-        )
-
-    with open(config_file_path, "r") as config_file:
-        try:
-            cloud_config: Optional[CloudDict] = yaml.load(
-                config_file, Loader=yamlloader.ordereddict.CSafeLoader
-            ).get("cloud")
-        except AttributeError:
-            raise PyrrowheadError(
-                "Malformed configuration file: " "Could not load YAML document"
-            )
-
-    if cloud_config is None:
-        raise PyrrowheadError(
-            "Malformed cloud configuration file: Missing cloud information."
-        )
-    elif not validate_cloud_config(cloud_config):
-        raise PyrrowheadError("Malformed configuration file:" "Missing cloud key(s)")
-
-    return cloud_config
 
 
 def install_cloud(config_file_path, installation_target):

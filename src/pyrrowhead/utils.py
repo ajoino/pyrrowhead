@@ -7,6 +7,7 @@ from ipaddress import ip_address
 
 import typer
 import yaml
+import yamlloader
 
 from pyrrowhead.types_ import CloudDict
 
@@ -124,6 +125,28 @@ def check_valid_dns(identifier: str):
     return identifier_re.search(identifier) is not None
 
 
-def validate_cloud_config(cloud_config: CloudDict) -> bool:
-    required_keys = CloudDict.__annotations__.keys()
-    return set(cloud_config.keys()) == set(required_keys)
+def validate_cloud_config_file(config_file_path: Path) -> CloudDict:
+    if not config_file_path.is_file():
+        raise PyrrowheadError(
+            "Target cloud is not set up properly,"
+            " run `pyrrowhead cloud create` before installing cloud."
+        )
+
+    with open(config_file_path, "r") as config_file:
+        try:
+            cloud_config: Optional[CloudDict] = yaml.load(
+                config_file, Loader=yamlloader.ordereddict.CSafeLoader
+            ).get("cloud")
+        except AttributeError:
+            raise PyrrowheadError(
+                "Malformed configuration file: " "Could not load YAML document"
+            )
+
+    if cloud_config is None:
+        raise PyrrowheadError(
+            "Malformed cloud configuration file: Missing cloud information."
+        )
+    elif set(cloud_config.keys()) != set(CloudDict.__annotations__.keys()):
+        raise PyrrowheadError("Malformed configuration file:" "Missing cloud key(s)")
+
+    return cloud_config

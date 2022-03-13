@@ -4,14 +4,16 @@ import ssl
 import subprocess
 import time
 
-import yaml
-import yamlloader  # type: ignore
 from rich.text import Text
-import typer
 
 from pyrrowhead import rich_console
 from pyrrowhead.cloud.stop import stop_local_cloud
-from pyrrowhead.utils import switch_directory, PyrrowheadError
+from pyrrowhead.utils import (
+    switch_directory,
+    PyrrowheadError,
+    validate_cloud_config_file,
+)
+from pyrrowhead.constants import CLOUD_CONFIG_FILE_NAME
 
 
 def check_server(address, port, secure, certfile, keyfile, cafile):
@@ -44,38 +46,31 @@ def check_server(address, port, secure, certfile, keyfile, cafile):
             return False
 
 
-def is_port_in_use(port):
-    import socket
-
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex(("localhost", port)) == 0
-
-
 def check_returncode(output, status, cloud_directory: Path = Path.cwd()):
     if output.returncode != 0:
         rich_console.print(Text("Encountered an error during startup: "))
         rich_console.print(Text(output.stderr.decode()))
         status.stop()
         stop_local_cloud(cloud_directory)
-        raise typer.Abort()
+        raise PyrrowheadError()
 
 
 def start_local_cloud(cloud_directory: Path):
-    with open(cloud_directory / "cloud_config.yaml") as config_file:
-        cloud_config = yaml.load(config_file, Loader=yamlloader.ordereddict.Loader)
-    cloud_name = cloud_config["cloud"]["cloud_name"]
-    org_name = cloud_config["cloud"]["organization_name"]
-    ssl_enabled = cloud_config["cloud"]["ssl_enabled"]
+    cloud_config = validate_cloud_config_file(cloud_directory / CLOUD_CONFIG_FILE_NAME)
+
+    cloud_name = cloud_config["cloud_name"]
+    org_name = cloud_config["organization_name"]
+    ssl_enabled = cloud_config["ssl_enabled"]
 
     sysop_certfile = (cloud_directory / "certs/crypto/sysop.crt").absolute()
     sysop_keyfile = (cloud_directory / "certs/crypto/sysop.key").absolute()
     sysop_cafile = (cloud_directory / "certs/crypto/sysop.ca").absolute()
-    core_systems = cloud_config["cloud"]["core_systems"]
+    core_systems = cloud_config["core_systems"]
 
     with switch_directory(cloud_directory):
         with rich_console.status("MySQL instance starting...") as status:
             output = subprocess.run(
-                ["docker-compose", "up", "-d", f"mysql.{cloud_name}.{org_name}"],
+                f"docker-compose up -d mysql.{cloud_name}.{org_name}".split(),
                 capture_output=True,
             )
             check_returncode(output, status)
