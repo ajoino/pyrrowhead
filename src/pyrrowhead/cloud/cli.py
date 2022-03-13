@@ -1,5 +1,6 @@
 from pathlib import Path
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Callable
+from functools import wraps
 
 import typer
 
@@ -30,6 +31,18 @@ cloud_app = typer.Typer(
     help="Used to set up, configure, start, and stop local clouds using "
     "the appropriate subcommand. See list below.",
 )
+
+
+def print_pyrrowhead_error(func: Callable[..., None]) -> Callable[..., None]:
+    @wraps(func)
+    def decorator(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except PyrrowheadError as e:
+            rich_console.print(e)
+            raise typer.Exit(-1)
+
+    return decorator
 
 
 def decide_cloud_directory(
@@ -73,6 +86,7 @@ def decide_cloud_directory(
 
 
 @cloud_app.command()
+@print_pyrrowhead_error
 def configure(
     cloud_identifier: str = ARG_CLOUD_IDENTIFIER,
     cloud_name: Optional[str] = OPT_CLOUD_NAME,
@@ -98,6 +112,7 @@ def configure(
 
 
 @cloud_app.command()
+@print_pyrrowhead_error
 def list(
     # organization_filter: str = typer.Option('', '--organization', '-o'),
 ):
@@ -114,6 +129,7 @@ def list(
 
 
 @cloud_app.command()
+@print_pyrrowhead_error
 def install(
     cloud_identifier: str = ARG_CLOUD_IDENTIFIER,
     cloud_name: Optional[str] = OPT_CLOUD_NAME,
@@ -134,14 +150,11 @@ def install(
 
     config_file = target / CLOUD_CONFIG_FILE_NAME
 
-    try:
-        install_cloud(config_file, target)
-    except PyrrowheadError as e:
-        rich_console.print(e)
-        raise typer.Exit(-1)
+    install_cloud(config_file, target)
 
 
 @cloud_app.command()
+@print_pyrrowhead_error
 def uninstall(
     cloud_identifier: str = ARG_CLOUD_IDENTIFIER,
     cloud_name: Optional[str] = OPT_CLOUD_NAME,
@@ -172,6 +185,7 @@ def uninstall(
 
 
 @cloud_app.command()
+@print_pyrrowhead_error
 def create(
     cloud_identifier: Optional[str] = ARG_CLOUD_IDENTIFIER,
     cloud_name: Optional[str] = OPT_CLOUD_NAME,
@@ -240,24 +254,21 @@ def create(
         rich_console.print(f'"{cloud_identifier}" is not a valid cloud identifier')
         raise typer.Exit(-1)
 
-    try:
-        create_cloud_config(
-            target_directory=installation_target,
-            cloud_identifier=cloud_identifier,
-            cloud_name=cloud_name,
-            organization_name=organization_name,
-            ssl_enabled=ssl_enabled,
-            ip_subnet=ip_network,
-            core_san=core_san,
-            do_install=do_install,
-            include=include,
-        )
-    except PyrrowheadError as e:
-        rich_console.print(str(e))
-        raise typer.Exit(-1)
+    create_cloud_config(
+        target_directory=installation_target,
+        cloud_identifier=cloud_identifier,
+        cloud_name=cloud_name,
+        organization_name=organization_name,
+        ssl_enabled=ssl_enabled,
+        ip_subnet=ip_network,
+        core_san=core_san,
+        do_install=do_install,
+        include=include,
+    )
 
 
 @cloud_app.command()
+@print_pyrrowhead_error
 def up(
     cloud_identifier: str = ARG_CLOUD_IDENTIFIER,
     cloud_name: Optional[str] = OPT_CLOUD_NAME,
@@ -299,6 +310,7 @@ def up(
 
 
 @cloud_app.command()
+@print_pyrrowhead_error
 def down(
     cloud_identifier: str = ARG_CLOUD_IDENTIFIER,
     cloud_name: Optional[str] = OPT_CLOUD_NAME,
@@ -319,6 +331,7 @@ def down(
 
 
 @cloud_app.command(name="client-add")
+@print_pyrrowhead_error
 def system(
     cloud_identifier: str = ARG_CLOUD_IDENTIFIER,
     cloud_name: Optional[str] = OPT_CLOUD_NAME,
@@ -353,14 +366,10 @@ def system(
 
     config_file = target / "cloud_config.yaml"
 
-    try:
-        add_client_system(
-            config_file,
-            system_name,
-            system_address,
-            system_port,
-            system_addl_addr,
-        )
-    except PyrrowheadError as e:
-        rich_console.print(str(e))
-        raise typer.Exit(-1)
+    add_client_system(
+        config_file,
+        system_name,
+        system_address,
+        system_port,
+        system_addl_addr,
+    )
