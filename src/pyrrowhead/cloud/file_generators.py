@@ -21,7 +21,7 @@ from pyrrowhead.types_ import CloudDict
 yaml_safedump = partial(yaml.dump, Dumper=yamlloader.ordereddict.CSafeDumper)
 
 
-def generate_config_files(cloud_config: CloudDict, target_path):
+def generate_config_files(cloud_config: CloudDict, target_path, password):
     """
     Creates the property files for all core services in yaml_path
     Args:
@@ -53,6 +53,7 @@ def generate_config_files(cloud_config: CloudDict, target_path):
             sr_address=sr_address,
             sr_port=sr_port,
             ssl_enabled=cloud_config["ssl_enabled"],
+            cert_pw=password,
         )
 
         core_system_config_path = Path(target_path) / "core_system_config"
@@ -63,7 +64,7 @@ def generate_config_files(cloud_config: CloudDict, target_path):
             target_file.write(system_config_file)
 
 
-def generate_docker_compose_file(cloud_config: CloudDict, target_path):
+def generate_docker_compose_file(cloud_config: CloudDict, target_path, password):
     cloud_identifier = (
         f'{cloud_config["cloud_name"]}.{cloud_config["organization_name"]}'
     )
@@ -75,7 +76,7 @@ def generate_docker_compose_file(cloud_config: CloudDict, target_path):
                     f"mysql.{cloud_identifier}": {
                         "container_name": f"mysql.{cloud_identifier}",
                         "image": "mysql:5.7",
-                        "environment": ["MYSQL_ROOT_PASSWORD=123456"],
+                        "environment": [f"MYSQL_ROOT_PASSWORD={password}"],
                         "volumes": [
                             f"mysql.{cloud_identifier}:/var/lib/mysql",
                             "./sql:/docker-entrypoint-initdb.d/",
@@ -121,10 +122,10 @@ def generate_docker_compose_file(cloud_config: CloudDict, target_path):
         yaml_safedump(docker_compose_content, target_file)
 
 
-def generate_all_files(cloud_config, yaml_path, target_path):
-    generate_config_files(cloud_config, target_path)
+def generate_all_files(cloud_config, yaml_path, target_path, password):
+    generate_config_files(cloud_config, target_path, password)
     rich_console.print(Text("Generated core system configuration files."))
-    generate_docker_compose_file(cloud_config, target_path)
+    generate_docker_compose_file(cloud_config, target_path, password)
     rich_console.print(Text("Generated docker-compose.yml."))
     # Copy files that need not be generated
     with path(database_config, "initSQL.sh") as init_sql_path:

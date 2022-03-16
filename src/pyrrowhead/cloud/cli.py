@@ -5,7 +5,11 @@ from functools import wraps
 import typer
 
 from pyrrowhead import rich_console
-from pyrrowhead.cloud.installation import install_cloud, uninstall_cloud
+from pyrrowhead.cloud.installation import (
+    install_cloud,
+    uninstall_cloud,
+    password_option,
+)
 from pyrrowhead.cloud.create import CloudConfiguration, create_cloud_config
 from pyrrowhead.cloud.start import start_local_cloud
 from pyrrowhead.cloud.stop import stop_local_cloud
@@ -52,10 +56,10 @@ def decide_cloud_directory(
     clouds_directory: Path,
 ) -> Tuple[Path, str]:
     if cloud_identifier and any((cloud_name, organization_name)):
-        rich_console.print(
+        raise PyrrowheadError(
             "CLOUD_IDENTIFIER and [CLOUD_NAME and ORG_NAME] are " "mutually exclusive."
         )
-        raise typer.Exit(-1)
+
     if (
         cloud_identifier is not None
         and len(split_cloud_identifier := cloud_identifier.split(".")) == 2
@@ -72,15 +76,13 @@ def decide_cloud_directory(
             f"{cloud_name}.{organization_name}",
         )
     else:
-        rich_console.print(
+        PyrrowheadError(
             "Could not decide local cloud. "
             "Did you forget to provide CLOUD_NAME or ORG_NAME?"
         )
-        raise typer.Exit(-1)
 
     if not ret[0].exists():
-        rich_console.print(f'Could not find local cloud "{ret[1]}"')
-        raise typer.Exit(-1)
+        PyrrowheadError(f'Could not find local cloud "{ret[1]}"')
 
     return ret
 
@@ -135,6 +137,9 @@ def install(
     cloud_name: Optional[str] = OPT_CLOUD_NAME,
     organization_name: Optional[str] = OPT_ORG_NAME,
     cloud_directory: Path = OPT_CLOUDS_DIRECTORY,
+    cloud_password: str = password_option("cloud"),
+    org_password: str = password_option("org"),
+    root_password: str = password_option("root"),
 ):
     """
     Installs cloud by creating certificate files and core service configuration files.
@@ -150,7 +155,11 @@ def install(
 
     config_file = target / CLOUD_CONFIG_FILE_NAME
 
-    install_cloud(config_file, target)
+    install_cloud(
+        config_file,
+        target,
+        password=cloud_password,
+    )
 
 
 @cloud_app.command()

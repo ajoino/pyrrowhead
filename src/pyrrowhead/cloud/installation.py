@@ -1,6 +1,8 @@
 import shutil
 import subprocess
+from typing import Optional, Callable
 
+import typer
 from rich.text import Text
 
 from pyrrowhead.cloud.file_generators import generate_all_files
@@ -14,15 +16,18 @@ from pyrrowhead.utils import (
 from pyrrowhead.constants import CLOUD_CONFIG_FILE_NAME
 
 
-def install_cloud(config_file_path, installation_target):
+def install_cloud(config_file_path, installation_target, password):
     cloud_config = validate_cloud_config_file(config_file_path)
 
     with rich_console.status(Text("Installing Arrowhead local cloud...")):
-        generate_all_files(cloud_config, config_file_path, installation_target)
+        generate_all_files(
+            cloud_config, config_file_path, installation_target, password
+        )
         initialize_cloud(
             installation_target,
             cloud_config["cloud_name"],
             cloud_config["organization_name"],
+            password=password,
         )
     rich_console.print("Finished installing the [blue]Arrowhead[/blue] local cloud!")
 
@@ -55,3 +60,19 @@ def uninstall_cloud(
         (installation_target / "initSQL.sh").unlink()
     subprocess.run(["docker", "volume", "rm", f"mysql.{cloud_name}.{org_name}"])
     rich_console.print("Uninstallation complete")
+
+
+def password_option(name: str, callback: Optional[Callable] = None) -> typer.Option:
+    typer.Option(
+        "123456",
+        prompt=True,
+        confirmation_prompt=True,
+        hide_input=True,
+        prompt_required=False,
+        help=f"Password for {name} certificates. Defaults to '123456' if not set",
+        callback=callback,
+    ),
+
+
+def org_callback(ctx: typer.Context, password: str) -> str:
+    pass
