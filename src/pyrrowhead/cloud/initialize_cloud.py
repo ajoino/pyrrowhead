@@ -21,8 +21,18 @@ def check_mysql_volume_exists(cloud_name, org_name):
     return ps_output.find(f"mysql.{cloud_name}.{org_name}") != -1
 
 
-def initialize_cloud(cloud_directory, cloud_name, organization_name, password):
-    setup_certificates(cloud_directory / "cloud_config.yaml", password)
+def initialize_cloud(
+    cloud_directory,
+    cloud_name,
+    organization_name,
+    cloud_password,
+    org_password,
+):
+    setup_certificates(
+        cloud_directory / "cloud_config.yaml",
+        cloud_password=cloud_password,
+        org_password=org_password,
+    )
     rich_console.print(Text("Created certificates."))
     if not check_sql_initialized(cloud_directory):
         subprocess.run(["./initSQL.sh"], cwd=cloud_directory, capture_output=True)

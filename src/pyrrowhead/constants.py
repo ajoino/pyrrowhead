@@ -22,6 +22,7 @@ OPT_CLOUDS_DIRECTORY = typer.Option(
     help="Directory of local cloud. Experimental feature. "
     "Should only be used when a local cloud is "
     "installed outside the default path.",
+    is_eager=True,
 )
 ARG_CLOUD_IDENTIFIER = typer.Argument(
     None,
@@ -29,6 +30,7 @@ ARG_CLOUD_IDENTIFIER = typer.Argument(
 Cloud identifier string of format <CLOUD_NAME>.<ORG_NAME>.
 Mutually exclusive with options -c and -o.
 """,
+    is_eager=True,
 )
 ARG_ORG_NAME = typer.Argument(
     None,

@@ -122,7 +122,7 @@ def generate_docker_compose_file(cloud_config: CloudDict, target_path, password)
         yaml_safedump(docker_compose_content, target_file)
 
 
-def generate_all_files(cloud_config, yaml_path, target_path, password):
+def generate_cloud_files(cloud_config, yaml_path, target_path, password):
     generate_config_files(cloud_config, target_path, password)
     rich_console.print(Text("Generated core system configuration files."))
     generate_docker_compose_file(cloud_config, target_path, password)

@@ -8,7 +8,6 @@ from pyrrowhead import rich_console
 from pyrrowhead.cloud.installation import (
     install_cloud,
     uninstall_cloud,
-    password_option,
 )
 from pyrrowhead.cloud.create import CloudConfiguration, create_cloud_config
 from pyrrowhead.cloud.start import start_local_cloud
@@ -130,6 +129,37 @@ def list(
             rich_console.print(cloud_identifier, directory)
 
 
+def password_callback(password: str):
+    if not len(password) >= 6:
+        rich_console.print("Password must be at least 6 characters long.")
+        raise typer.BadParameter("TEST")
+
+    return password
+
+
+def org_password_callback(ctx: typer.Context, password: Optional[str]):
+    cloud_identifier: str = ctx.params.get("cloud_identifier")
+    cloud_name: str = ctx.params.get("cloud_name")
+    org_name: str = ctx.params.get("organization_name")
+    cloud_directory: Path = ctx.params["cloud_directory"]
+    if isinstance(cloud_identifier, str) and cloud_identifier != "":
+        cloud_name, org_name = cloud_identifier.split(".")
+
+    if (
+        not cloud_directory.joinpath(org_name, "org-certs").is_dir()
+        or password is not None
+    ):
+        return password
+
+    forced_password = typer.prompt(
+        "Organization certificates detected. Org cert password: ",
+        hide_input=True,
+        confirmation_prompt=True,
+    )
+
+    return forced_password
+
+
 @cloud_app.command()
 @print_pyrrowhead_error
 def install(
@@ -137,9 +167,35 @@ def install(
     cloud_name: Optional[str] = OPT_CLOUD_NAME,
     organization_name: Optional[str] = OPT_ORG_NAME,
     cloud_directory: Path = OPT_CLOUDS_DIRECTORY,
-    cloud_password: str = password_option("cloud"),
-    org_password: str = password_option("org"),
-    root_password: str = password_option("root"),
+    cloud_password: str = typer.Option(
+        "123456",
+        metavar=f"CLOUD_PASSWORD",
+        prompt=True,
+        confirmation_prompt=True,
+        hide_input=True,
+        prompt_required=False,
+        help=f"Password for cloud certificates.",
+        callback=password_callback,
+    ),
+    org_password: Optional[str] = typer.Option(
+        None,
+        metavar=f"ORG_PASSWORD",
+        prompt=True,
+        confirmation_prompt=True,
+        hide_input=True,
+        prompt_required=False,
+        help=f"Password for cloud certificates.",
+        callback=org_password_callback,
+    ),
+    root_password: Optional[str] = typer.Option(
+        "123456",
+        metavar=f"ROOT_PASSWORD",
+        prompt=True,
+        confirmation_prompt=True,
+        hide_input=True,
+        prompt_required=False,
+        help=f"Password for root certificates.",
+    ),
 ):
     """
     Installs cloud by creating certificate files and core service configuration files.
@@ -158,7 +214,8 @@ def install(
     install_cloud(
         config_file,
         target,
-        password=cloud_password,
+        cloud_password=cloud_password,
+        org_password=org_password,
     )
 
 

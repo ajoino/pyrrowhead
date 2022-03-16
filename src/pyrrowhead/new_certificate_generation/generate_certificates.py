@@ -16,6 +16,7 @@ from cryptography import x509
 from cryptography.x509 import Certificate, CertificateSigningRequest
 from cryptography.x509.oid import NameOID
 
+from pyrrowhead import rich_console
 from pyrrowhead.types_ import ConfigDict
 from pyrrowhead.utils import PyrrowheadError, validate_san
 
@@ -305,7 +306,7 @@ def store_truststore(cloud_cert: Certificate, cert_directory: Path, password: st
         0
     ].value
     cloud_short_name, *_ = cloud_long_name.split(".")
-    subprocess.run(
+    res = subprocess.run(
         f"keytool -importcert -trustcacerts"
         f" -noprompt -storepass {password!s}"
         f" -keystore {cert_directory}/truststore.p12"
@@ -313,6 +314,9 @@ def store_truststore(cloud_cert: Certificate, cert_directory: Path, password: st
         f" -alias {cloud_long_name}".split(),
         capture_output=True,
     )
+    if res.returncode != 0:
+        raise PyrrowheadError(f"Could not create truststore:\n{res.stdout!s}")
+    rich_console.print("Generated truststore.p12")
 
 
 def generate_and_store_root_files(
@@ -473,7 +477,7 @@ def generate_cloud_files(
     store_truststore(cloud_cert, cloud_cert_dir, password)
 
 
-def setup_certificates(cloud_config_path: Path, password: str):
+def setup_certificates(cloud_config_path: Path, cloud_password: str, org_password: str):
     with open(cloud_config_path, "r") as cloud_config_file:
         cloud_config: ConfigDict = yaml.safe_load(cloud_config_file)
 
@@ -494,12 +498,12 @@ def setup_certificates(cloud_config_path: Path, password: str):
                 print("Root cert does not exist, generating self-signed root cert.")
                 root_cert_dir.mkdir(parents=True)
                 root_key, root_cert = generate_and_store_root_files(
-                    root_cert_dir, password
+                    root_cert_dir, "123456"  # Self signed roots are insecure.
                 )
             else:
                 with open(root_cert_dir / "root.p12", "rb") as root_p12:
                     root_key, root_cert, *_ = load_p12(  # type: ignore
-                        root_p12.read(), password.encode()
+                        root_p12.read(), "123456".encode()
                     )  # noqa
                     if not isinstance(root_key, RSAPrivateKey) or not isinstance(
                         root_cert, Certificate
@@ -512,12 +516,12 @@ def setup_certificates(cloud_config_path: Path, password: str):
                 org_cert_dir,
                 root_key,
                 root_cert,
-                password,
+                org_password,
             )
         else:
             with open(org_cert_dir / f"{org_name}.p12", "rb") as org_p12:
                 org_key, org_cert, ca_certs = load_p12(  # type: ignore
-                    org_p12.read(), password.encode()
+                    org_p12.read(), org_password.encode()
                 )
                 if not isinstance(org_key, RSAPrivateKey) or not isinstance(
                     org_cert, Certificate
@@ -538,12 +542,12 @@ def setup_certificates(cloud_config_path: Path, password: str):
             org_key,
             org_cert,
             root_cert,
-            password,
+            cloud_password,
         )
     else:
         with open(cloud_cert_dir / f"{cloud_name}.p12", "rb") as cloud_cert_file:
             cloud_key, cloud_cert, ca_certs = load_p12(  # type: ignore
-                cloud_cert_file.read(), password.encode()
+                cloud_cert_file.read(), cloud_password.encode()
             )
             if len(ca_certs) != 2:
                 raise RuntimeError(
@@ -559,5 +563,5 @@ def setup_certificates(cloud_config_path: Path, password: str):
         cloud_cert,
         org_cert,
         root_cert,
-        password,
+        cloud_password,
     )
