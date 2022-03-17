@@ -6,7 +6,6 @@ import ipaddress
 import yaml
 import yamlloader  # type: ignore
 
-from pyrrowhead.cloud.installation import install_cloud
 from pyrrowhead.utils import get_config, set_config, validate_san, PyrrowheadError
 from pyrrowhead.types_ import ConfigDict
 
@@ -147,7 +146,8 @@ def create_cloud_config(
     set_config(config)
 
     if do_install:
-        install_cloud(target_directory / "cloud_config.yaml", target_directory)
+        raise PyrrowheadError("The --install option is temporarily disabled.")
+        # install_cloud(target_directory / "cloud_config.yaml", target_directory)
 
 
 def insert_ips(system_dict, network, start):

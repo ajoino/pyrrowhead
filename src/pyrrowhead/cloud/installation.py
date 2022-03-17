@@ -1,6 +1,5 @@
 import shutil
 import subprocess
-from typing import Optional, Callable
 
 import typer
 from rich.text import Text

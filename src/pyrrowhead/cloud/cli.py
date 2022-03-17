@@ -138,9 +138,9 @@ def password_callback(password: str):
 
 
 def org_password_callback(ctx: typer.Context, password: Optional[str]):
-    cloud_identifier: str = ctx.params.get("cloud_identifier")
-    cloud_name: str = ctx.params.get("cloud_name")
-    org_name: str = ctx.params.get("organization_name")
+    cloud_identifier: str = ctx.params.get("cloud_identifier")  # type:ignore
+    cloud_name: str = ctx.params.get("cloud_name")  # type:ignore
+    org_name: str = ctx.params.get("organization_name")  # type:ignore
     cloud_directory: Path = ctx.params["cloud_directory"]
     if isinstance(cloud_identifier, str) and cloud_identifier != "":
         cloud_name, org_name = cloud_identifier.split(".")
@@ -169,32 +169,34 @@ def install(
     cloud_directory: Path = OPT_CLOUDS_DIRECTORY,
     cloud_password: str = typer.Option(
         "123456",
-        metavar=f"CLOUD_PASSWORD",
+        metavar="CLOUD_PASSWORD",
+        envvar="CLOUD_CERT_PASSWORD",
         prompt=True,
         confirmation_prompt=True,
         hide_input=True,
         prompt_required=False,
-        help=f"Password for cloud certificates.",
+        help="Password for cloud certificates.",
         callback=password_callback,
     ),
     org_password: Optional[str] = typer.Option(
         None,
-        metavar=f"ORG_PASSWORD",
+        metavar="ORG_PASSWORD",
+        envvar="ORG_CERT_PASSWORD",
         prompt=True,
         confirmation_prompt=True,
         hide_input=True,
         prompt_required=False,
-        help=f"Password for cloud certificates.",
+        help="Password for organization certificates.",
         callback=org_password_callback,
     ),
     root_password: Optional[str] = typer.Option(
         "123456",
-        metavar=f"ROOT_PASSWORD",
+        metavar="ROOT_PASSWORD",
         prompt=True,
         confirmation_prompt=True,
         hide_input=True,
         prompt_required=False,
-        help=f"Password for root certificates.",
+        help="Password for root certificates.",
     ),
 ):
     """
