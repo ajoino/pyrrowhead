@@ -76,14 +76,28 @@ def get_core_system_address_and_port(
     return address, port, secure, scheme
 
 
-def get_local_cloud_directory(dir: Optional[Path] = None) -> Path:
+def get_names_from_context(ctx: typer.Context) -> Tuple[str, str]:
+    cloud_identifier = ctx.params.get("cloud_identifier")
+
+    if cloud_identifier is not None and cloud_identifier != "":
+        cloud_name, org_name = cloud_identifier.split(".")
+    else:
+        cloud_name = ctx.params.get("cloud_name")
+        org_name = ctx.params.get("organization_name")
+
+    return cloud_name, org_name
+
+
+def get_local_cloud_directory(ctx: typer.Context, dir: Optional[Path] = None) -> Path:
     from pyrrowhead.constants import LOCAL_CLOUDS_SUBDIR
+
+    cloud_name, org_name = get_names_from_context(ctx)
 
     if dir is not None:
         print("The '-d' option is currently not in use.")
         raise typer.Exit(-1)
 
-    return get_pyrrowhead_path().joinpath(LOCAL_CLOUDS_SUBDIR)
+    return get_pyrrowhead_path().joinpath(LOCAL_CLOUDS_SUBDIR, org_name, cloud_name)
 
 
 def get_pyrrowhead_path() -> Path:

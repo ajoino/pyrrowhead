@@ -18,14 +18,10 @@ from pyrrowhead.utils import (
     switch_directory,
     set_active_cloud as set_active_cloud_func,
     get_config,
-    check_valid_dns,
     PyrrowheadError,
+    get_local_cloud_directory,
 )
 from pyrrowhead.constants import (
-    OPT_CLOUDS_DIRECTORY,
-    OPT_CLOUD_NAME,
-    OPT_ORG_NAME,
-    ARG_CLOUD_IDENTIFIER,
     CLOUD_CONFIG_FILE_NAME,
 )
 
@@ -48,42 +44,57 @@ def print_pyrrowhead_error(func: Callable[..., None]) -> Callable[..., None]:
     return decorator
 
 
-def decide_cloud_directory(
-    cloud_identifier: Optional[str],
-    cloud_name: Optional[str],
-    organization_name: Optional[str],
-    clouds_directory: Path,
-) -> Tuple[Path, str]:
-    if cloud_identifier and any((cloud_name, organization_name)):
-        raise PyrrowheadError(
-            "CLOUD_IDENTIFIER and [CLOUD_NAME and ORG_NAME] are " "mutually exclusive."
-        )
+def cloud_name_callback(ctx: typer.Context, cloud_name: Optional[str]) -> str:
+    if cloud_name is not None and cloud_name != "":
+        return cloud_name
 
-    if (
-        cloud_identifier is not None
-        and len(split_cloud_identifier := cloud_identifier.split(".")) == 2
-    ):
-        ret = (
-            clouds_directory.joinpath(
-                *[part for part in reversed(split_cloud_identifier)]
-            ),
-            cloud_identifier,
-        )
-    elif cloud_name is not None and organization_name is not None:
-        ret = (
-            clouds_directory.joinpath(organization_name, cloud_name),
-            f"{cloud_name}.{organization_name}",
-        )
-    else:
-        PyrrowheadError(
-            "Could not decide local cloud. "
-            "Did you forget to provide CLOUD_NAME or ORG_NAME?"
-        )
+    cloud_name, _ = ctx.params.get("cloud_identifier").split(".")
+    return cloud_name
 
-    if not ret[0].exists():
-        PyrrowheadError(f'Could not find local cloud "{ret[1]}"')
 
-    return ret
+def org_name_callback(ctx: typer.Context, org_name: Optional[str]) -> str:
+    if org_name is not None and org_name != "":
+        return org_name
+
+    _, org_name = ctx.params.get("cloud_identifier").split(".")
+    return org_name
+
+
+OPT_CLOUD_NAME = typer.Option(
+    None,
+    "--cloud",
+    "-c",
+    help="CLOUD_NAME. Mandatory with option -o and "
+    "mutually exclusive with argument CLOUD_IDENTIFIER",
+    callback=cloud_name_callback,
+)
+OPT_ORG_NAME = typer.Option(
+    None,
+    "--org",
+    "-o",
+    help="ORG_NAME. Mandatory with option -c and "
+    "mutually exclusive with argument CLOUD_IDENTIFIER",
+    callback=org_name_callback,
+)
+OPT_CLOUDS_DIRECTORY = typer.Option(
+    None,
+    "--dir",
+    "-d",
+    callback=get_local_cloud_directory,
+    hidden=True,
+    help="Directory of local cloud. Experimental feature. "
+    "Should only be used when a local cloud is "
+    "installed outside the default path.",
+    is_eager=True,
+)
+ARG_CLOUD_IDENTIFIER = typer.Argument(
+    None,
+    help="""
+Cloud identifier string of format <CLOUD_NAME>.<ORG_NAME>.
+Mutually exclusive with options -c and -o.
+""",
+    is_eager=True,
+)
 
 
 @cloud_app.command()
@@ -101,13 +112,7 @@ def configure(
     The local cloud needs to be reinstalled after being configured
     to make sure the changes are applied.
     """
-    target, cloud_identifier = decide_cloud_directory(
-        cloud_identifier,
-        cloud_name,
-        organization_name,
-        clouds_directory,
-    )
-    with switch_directory(target):
+    with switch_directory(clouds_directory):
         if enable_ssl is not None:
             enable_ssl_func(enable_ssl)
 
@@ -204,18 +209,11 @@ def install(
 
     CLOUD_NAME and ORG_name are the cloud and organization names used in the generated certificates.
     """  # noqa
-    target, cloud_identifier = decide_cloud_directory(
-        cloud_identifier,
-        cloud_name,
-        organization_name,
-        cloud_directory,
-    )
-
-    config_file = target / CLOUD_CONFIG_FILE_NAME
+    config_file = cloud_directory / CLOUD_CONFIG_FILE_NAME
 
     install_cloud(
         config_file,
-        target,
+        cloud_directory,
         cloud_password=cloud_password,
         org_password=org_password,
     )
@@ -241,15 +239,8 @@ def uninstall(
 
     CLOUD_NAME and ORG_name are the cloud and organization names used in the generated certificates.
     """  # noqa
-    target, cloud_identifier = decide_cloud_directory(
-        cloud_identifier,
-        cloud_name,
-        organization_name,
-        clouds_directory,
-    )
-
-    stop_local_cloud(target)
-    uninstall_cloud(target, complete)
+    stop_local_cloud(clouds_directory)
+    uninstall_cloud(clouds_directory, complete)
 
 
 @cloud_app.command()
@@ -298,29 +289,6 @@ def create(
 
     CLOUD_NAME and ORG_name are the cloud and organization names used in the generated certificates.
     """  # noqa
-    if not cloud_identifier and not cloud_name and not organization_name:
-        rich_console.print(
-            "You must either provide the 'CLOUD_IDENTIFIER' argument or both the "
-            "'CLOUD_NAME' and 'ORG_NAME' options."
-        )
-        raise typer.Exit(-1)
-    if (
-        cloud_identifier is None
-        and cloud_name is not None
-        and organization_name is not None
-    ):
-        cloud_identifier = ".".join((cloud_name, organization_name))
-    elif cloud_identifier is not None:
-        cloud_name, organization_name = cloud_identifier.split(".")
-    else:
-        rich_console.print(
-            "CLOUD_IDENTIFIER, or CLOUD_NAME or ORG_NAME are of unknown types."
-        )
-        raise typer.Exit(-1)
-
-    if not check_valid_dns(cloud_identifier):
-        rich_console.print(f'"{cloud_identifier}" is not a valid cloud identifier')
-        raise typer.Exit(-1)
 
     create_cloud_config(
         target_directory=installation_target,
@@ -362,18 +330,12 @@ def up(
     This command might take a while if this is the first time starting a local cloud on this machine
     as docker needs to pull the images.
     """  # noqa
-    target, cloud_identifier = decide_cloud_directory(
-        cloud_identifier,
-        cloud_name,
-        organization_name,
-        clouds_directory,
-    )
     try:
-        start_local_cloud(target)
+        start_local_cloud(clouds_directory)
         if set_active_cloud:
             set_active_cloud_func(cloud_identifier)
     except KeyboardInterrupt:
-        stop_local_cloud(target)
+        stop_local_cloud(clouds_directory)
         raise typer.Abort()
 
 
@@ -388,13 +350,7 @@ def down(
     """
     Shuts down local cloud.
     """
-    target, cloud_identifier = decide_cloud_directory(
-        cloud_identifier,
-        cloud_name,
-        organization_name,
-        clouds_directory,
-    )
-    stop_local_cloud(target)
+    stop_local_cloud(clouds_directory)
     set_active_cloud_func("")
 
 
@@ -425,14 +381,7 @@ def system(
     """
     Adds system to the cloud configuration.
     """
-    target, cloud_identifier = decide_cloud_directory(
-        cloud_identifier,
-        cloud_name,
-        organization_name,
-        clouds_directory,
-    )
-
-    config_file = target / "cloud_config.yaml"
+    config_file = clouds_directory / "cloud_config.yaml"
 
     add_client_system(
         config_file,

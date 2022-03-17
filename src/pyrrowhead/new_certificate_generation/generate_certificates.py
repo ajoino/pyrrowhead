@@ -17,6 +17,7 @@ from cryptography.x509 import Certificate, CertificateSigningRequest
 from cryptography.x509.oid import NameOID
 
 from pyrrowhead import rich_console
+from pyrrowhead.constants import ORG_CERT_DIR, ROOT_CERT_DIR
 from pyrrowhead.types_ import ConfigDict
 from pyrrowhead.utils import PyrrowheadError, validate_san
 
@@ -486,8 +487,8 @@ def setup_certificates(cloud_config_path: Path, cloud_password: str, org_passwor
 
     cloud_dir = cloud_config_path.parent
     cloud_cert_dir = cloud_dir / "certs/crypto/"
-    org_cert_dir = cloud_dir.parent / "org-certs/crypto/"
-    root_cert_dir = cloud_dir.parent / "root-certs/crypto"
+    org_cert_dir = cloud_dir.parent / f"{ORG_CERT_DIR}/crypto/"
+    root_cert_dir = cloud_dir.parent / f"{ROOT_CERT_DIR}/crypto"
 
     # TODO: Invert this horrible stack of ifs
     if not cloud_cert_dir.exists():

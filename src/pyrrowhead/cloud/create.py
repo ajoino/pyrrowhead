@@ -6,7 +6,13 @@ import ipaddress
 import yaml
 import yamlloader  # type: ignore
 
-from pyrrowhead.utils import get_config, set_config, validate_san, PyrrowheadError
+from pyrrowhead.utils import (
+    get_config,
+    set_config,
+    validate_san,
+    PyrrowheadError,
+    check_valid_dns,
+)
 from pyrrowhead.types_ import ConfigDict
 
 
@@ -27,10 +33,18 @@ def create_cloud_config(
     do_install,
     include,
 ):
+    if not check_valid_dns(cloud_identifier):
+        raise PyrrowheadError("CLOUD_IDENTIFIER must be valid DNS string.")
+    if not check_valid_dns(cloud_name):
+        raise PyrrowheadError("CLOUD_NAME must be valid DNS string.")
+    if not check_valid_dns(organization_name):
+        raise PyrrowheadError("ORG_NAME must be valid DNS string.")
     try:
         network = ipaddress.ip_network(ip_subnet)
     except ValueError:
         raise PyrrowheadError(f"Invalid ip network '{ip_subnet}'")
+    for name in core_san:
+        validate_san(name)
 
     mandatory_core_systems = OrderedDict(
         {
@@ -112,9 +126,6 @@ def create_cloud_config(
         cloud_core_services.update(insert_ips(onboarding_core, network, ip_start))
         ip_start += len(onboarding_core)
 
-    for name in core_san:
-        validate_san(name)
-
     cloud_config: ConfigDict = {
         "cloud": OrderedDict(  # type: ignore
             {
@@ -128,8 +139,6 @@ def create_cloud_config(
             }
         )
     }
-
-    target_directory = target_directory / f"{organization_name}/{cloud_name}"
 
     if not target_directory.exists():
         Path.mkdir(target_directory, parents=True)
