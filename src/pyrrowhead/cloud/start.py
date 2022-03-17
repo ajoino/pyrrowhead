@@ -59,7 +59,7 @@ def start_local_cloud(cloud_directory: Path):
     cloud_config = validate_cloud_config_file(cloud_directory / CLOUD_CONFIG_FILE_NAME)
 
     cloud_name = cloud_config["cloud_name"]
-    org_name = cloud_config["organization_name"]
+    org_name = cloud_config["org_name"]
     ssl_enabled = cloud_config["ssl_enabled"]
 
     sysop_certfile = (cloud_directory / "certs/crypto/sysop.crt").absolute()

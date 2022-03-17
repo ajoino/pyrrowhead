@@ -39,8 +39,8 @@ def generate_config_files(cloud_config: CloudDict, target_path, password):
 
     for system, config in core_systems.items():
         system_cn = (
-            f'{config["system_name"]}.{cloud_config["cloud_name"]}.'
-            f'{cloud_config["organization_name"]}.arrowhead.eu'
+            f'{config["domain"]}.{cloud_config["cloud_name"]}.'
+            f'{cloud_config["org_name"]}.arrowhead.eu'
         )
         template = env.get_template(f"core_system_config/{system}.properties")
 
@@ -48,7 +48,7 @@ def generate_config_files(cloud_config: CloudDict, target_path, password):
             **config,
             system_cn=system_cn,
             cloud_name=cloud_config["cloud_name"],
-            organization_name=cloud_config["organization_name"],
+            organization_name=cloud_config["org_name"],
             password=db_passwords[system],
             sr_address=sr_address,
             sr_port=sr_port,
@@ -65,9 +65,7 @@ def generate_config_files(cloud_config: CloudDict, target_path, password):
 
 
 def generate_docker_compose_file(cloud_config: CloudDict, target_path, password):
-    cloud_identifier = (
-        f'{cloud_config["cloud_name"]}.{cloud_config["organization_name"]}'
-    )
+    cloud_identifier = f'{cloud_config["cloud_name"]}.{cloud_config["org_name"]}'
     docker_compose_content = OrderedDict(
         {
             "version": "3",

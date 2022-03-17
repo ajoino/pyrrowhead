@@ -24,20 +24,17 @@ class CloudConfiguration(str, Enum):
 
 def create_cloud_config(
     target_directory: Path,
-    cloud_identifier,
     cloud_name,
-    organization_name,
+    org_name,
     ssl_enabled,
     ip_subnet,
     core_san,
     do_install,
     include,
 ):
-    if not check_valid_dns(cloud_identifier):
-        raise PyrrowheadError("CLOUD_IDENTIFIER must be valid DNS string.")
     if not check_valid_dns(cloud_name):
         raise PyrrowheadError("CLOUD_NAME must be valid DNS string.")
-    if not check_valid_dns(organization_name):
+    if not check_valid_dns(org_name):
         raise PyrrowheadError("ORG_NAME must be valid DNS string.")
     try:
         network = ipaddress.ip_network(ip_subnet)
@@ -126,11 +123,11 @@ def create_cloud_config(
         cloud_core_services.update(insert_ips(onboarding_core, network, ip_start))
         ip_start += len(onboarding_core)
 
-    cloud_config: ConfigDict = {
+    cloud_config: ConfigDict = {  # type: ignore
         "cloud": OrderedDict(  # type: ignore
             {
                 "cloud_name": cloud_name,
-                "organization_name": organization_name,
+                "org_name": org_name,
                 "ssl_enabled": ssl_enabled,
                 "subnet": str(network),
                 "core_san": core_san,
@@ -150,7 +147,7 @@ def create_cloud_config(
         yaml.dump(cloud_config, yaml_file, Dumper=yamlloader.ordereddict.CSafeDumper)
 
     config = get_config()
-    config["local-clouds"][cloud_identifier] = str(target_directory)
+    config["local-clouds"][f"{cloud_name}.{org_name}"] = str(target_directory)
 
     set_config(config)
 

@@ -24,6 +24,7 @@ class TestCloudInstall:
         [
             "install-test-cloud.install-test-org",
             "-o install-test-org -c install-test-cloud",
+            "-c install-test-cloud -o install-test-org",
         ],
     )
     def test_good_options(self, options, mock_pyrrowhead_path):

@@ -30,7 +30,7 @@ def install_cloud(
         initialize_cloud(
             installation_target,
             cloud_config["cloud_name"],
-            cloud_config["organization_name"],
+            cloud_config["org_name"],
             cloud_password=cloud_password,
             org_password=org_password,
         )
@@ -45,7 +45,7 @@ def uninstall_cloud(
     cloud_config = validate_cloud_config_file(config_path)
 
     cloud_name = cloud_config["cloud_name"]
-    org_name = cloud_config["organization_name"]
+    org_name = cloud_config["org_name"]
 
     if complete:
         # shutil.rmtree(installation_target)

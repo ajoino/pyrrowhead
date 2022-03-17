@@ -17,7 +17,7 @@ class CoreSystemDict(SystemDict):
 
 class CloudDict(TypedDict):
     cloud_name: str
-    organization_name: str
+    org_name: str
     ssl_enabled: bool
     subnet: str
     core_san: List[str]

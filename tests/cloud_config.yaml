@@ -1,33 +1,74 @@
-version: "3"
-
 cloud:
-  cloud_name: test
-  company_name: ltu
+  cloud_name: test-cloud
+  organization_name: test-org
   ssl_enabled: true
-
+  subnet: 172.16.2.0/24
+  core_san:
+  - ip:127.0.0.1
+  - dns:test-cloud.test-org.com
   client_systems:
-    test_provider:
-      system_name: test_provider
+    consumer-000:
+      address: 172.16.2.1
+      port: 5000
+      sans: []
+      system_name: consumer
+    consumer-001:
+      address: 172.16.2.1
+      port: 5001
+      sans: []
+      system_name: consumer
+    consumer-002:
+      address: 172.16.2.1
+      port: 5002
+      sans: []
+      system_name: consumer
+    test-system-000:
       address: 127.0.0.1
-      port: 7655
-    test_consumer:
-      system_name: test_consumer
+      port: 6000
+      sans:
+      - dns:test-system.test-org.com
+      - ip:192.168.0.1
+      system_name: test-system
+    test-system-001:
       address: 127.0.0.1
-      port: 7656
+      port: 6001
+      sans:
+      - dns:test-system.test-org.com
+      - ip:192.168.0.1
+      system_name: test-system
+    test-cloud-000:
+      address: 127.0.0.1
+      port: 6002
+      sans: []
+      system_name: test-cloud
   core_systems:
     service_registry:
-      system_name: service_registry
-      address: 127.0.0.1
+      address: 172.16.2.3
       domain: serviceregistry
       port: 8443
+      system_name: service_registry
     orchestrator:
-      system_name: orchestrator
-      address: 127.0.0.1
+      address: 172.16.2.4
       domain: orchestrator
       port: 8441
+      system_name: orchestrator
     authorization:
-      system_name: authorization
-      address: 127.0.0.1
+      address: 172.16.2.5
       domain: authorization
       port: 8445
-
+      system_name: authorization
+    event_handler:
+      address: 172.16.2.6
+      domain: eventhandler
+      port: 8455
+      system_name: event_handler
+    gateway:
+      address: 172.16.2.7
+      domain: gateway
+      port: 8453
+      system_name: gateway
+    gatekeeper:
+      address: 172.16.2.8
+      domain: gatekeeper
+      port: 8449
+      system_name: gatekeeper

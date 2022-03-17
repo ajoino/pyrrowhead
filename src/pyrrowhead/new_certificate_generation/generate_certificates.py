@@ -199,10 +199,10 @@ def generate_core_system_certs(
     cloud_config: ConfigDict, cloud_cert, cloud_key
 ) -> Dict[str, KeyCertPair]:
     cloud_name = cloud_config["cloud"]["cloud_name"]
-    org_name = cloud_config["cloud"]["organization_name"]
+    org_name = cloud_config["cloud"]["org_name"]
     return {
         core_system["system_name"]: generate_system_cert(
-            common_name=f'{core_system["system_name"]}.'
+            common_name=f'{core_system["domain"]}.'
             f"{cloud_name}.{org_name}.arrowhead.eu",
             ip=core_system["address"],
             issuer_cert=cloud_cert,
@@ -217,7 +217,7 @@ def generate_client_system_certs(
     cloud_config: ConfigDict, cloud_cert, cloud_key
 ) -> Dict[str, KeyCertPair]:
     cloud_name = cloud_config["cloud"]["cloud_name"]
-    org_name = cloud_config["cloud"]["organization_name"]
+    org_name = cloud_config["cloud"]["org_name"]
     return {
         client_id: generate_system_cert(
             f'{client_system["system_name"]}.{cloud_name}.{org_name}.arrowhead.eu',
@@ -427,7 +427,7 @@ def generate_cloud_files(
     password: str,
 ):
     cloud_name = cloud_config["cloud"]["cloud_name"]
-    org_name = cloud_config["cloud"]["organization_name"]
+    org_name = cloud_config["cloud"]["org_name"]
 
     core_system_certs = generate_core_system_certs(cloud_config, cloud_cert, cloud_key)
     client_system_certs = generate_client_system_certs(
@@ -483,7 +483,7 @@ def setup_certificates(cloud_config_path: Path, cloud_password: str, org_passwor
         cloud_config: ConfigDict = yaml.safe_load(cloud_config_file)
 
     cloud_name = cloud_config["cloud"]["cloud_name"]
-    org_name = cloud_config["cloud"]["organization_name"]
+    org_name = cloud_config["cloud"]["org_name"]
 
     cloud_dir = cloud_config_path.parent
     cloud_cert_dir = cloud_dir / "certs/crypto/"

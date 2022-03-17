@@ -25,6 +25,7 @@ from pyrrowhead.constants import (
     CLOUD_CONFIG_FILE_NAME,
 )
 
+
 cloud_app = typer.Typer(
     name="cloud",
     help="Used to set up, configure, start, and stop local clouds using "
@@ -46,7 +47,15 @@ def print_pyrrowhead_error(func: Callable[..., None]) -> Callable[..., None]:
 
 def cloud_name_callback(ctx: typer.Context, cloud_name: Optional[str]) -> str:
     if cloud_name is not None and cloud_name != "":
+        if ctx.params.get("cloud_identifier") is not None:
+            rich_console.print(
+                "CLOUD_IDENTIFIER and the CLOUD_NAME and ORG_NAME options are mutually exclusive."
+            )
+            raise typer.Exit(-1)
         return cloud_name
+    elif ctx.params.get("cloud_identifier") is None:
+        rich_console.print("CLOUD_IDENTIFIER or CLOUD_NAME and ORG_NAME must be given.")
+        raise typer.Exit(-1)
 
     cloud_name, _ = ctx.params.get("cloud_identifier").split(".")
     return cloud_name
@@ -54,7 +63,15 @@ def cloud_name_callback(ctx: typer.Context, cloud_name: Optional[str]) -> str:
 
 def org_name_callback(ctx: typer.Context, org_name: Optional[str]) -> str:
     if org_name is not None and org_name != "":
+        if ctx.params.get("cloud_identifier") is not None:
+            rich_console.print(
+                "CLOUD_IDENTIFIER and the CLOUD_NAME and ORG_NAME options are mutually exclusive."
+            )
+            raise typer.Exit(-1)
         return org_name
+    elif ctx.params.get("cloud_identifier") is None:
+        rich_console.print("CLOUD_IDENTIFIER or CLOUD_NAME and ORG_NAME must be given.")
+        raise typer.Exit(-1)
 
     _, org_name = ctx.params.get("cloud_identifier").split(".")
     return org_name
@@ -85,7 +102,6 @@ OPT_CLOUDS_DIRECTORY = typer.Option(
     help="Directory of local cloud. Experimental feature. "
     "Should only be used when a local cloud is "
     "installed outside the default path.",
-    is_eager=True,
 )
 ARG_CLOUD_IDENTIFIER = typer.Argument(
     None,
@@ -143,6 +159,7 @@ def password_callback(password: str):
 
 
 def org_password_callback(ctx: typer.Context, password: Optional[str]):
+    # TODO: replace with utils.get_names_from_context
     cloud_identifier: str = ctx.params.get("cloud_identifier")  # type:ignore
     cloud_name: str = ctx.params.get("cloud_name")  # type:ignore
     org_name: str = ctx.params.get("organization_name")  # type:ignore
@@ -292,9 +309,8 @@ def create(
 
     create_cloud_config(
         target_directory=installation_target,
-        cloud_identifier=cloud_identifier,
         cloud_name=cloud_name,
-        organization_name=organization_name,
+        org_name=organization_name,
         ssl_enabled=ssl_enabled,
         ip_subnet=ip_network,
         core_san=core_san,

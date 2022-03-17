@@ -118,7 +118,7 @@ class TestLocalCloudCreation:
         assert res.exit_code == -1
 
     @pytest.mark.parametrize("sys_name", ["test_system", "tëst-sŷstẽm"])
-    def test_add_client_bad_name(self, sys_name):
+    def test_add_client_bad_name(self, sys_name, mock_pyrrowhead_path):
         res = runner.invoke(
             app,
             f"cloud client-add test-cloud.test-org -n {sys_name}".split(),
@@ -128,7 +128,7 @@ class TestLocalCloudCreation:
         assert res.exit_code == -1
 
     @pytest.mark.parametrize("addr", ["127:0.1.1", "400:500:600:700"])
-    def test_bad_address(self, addr):
+    def test_bad_address(self, addr, mock_pyrrowhead_path):
         res = runner.invoke(
             app,
             f"cloud client-add test-cloud.test-org -n bad -a {addr}".split(),
@@ -146,7 +146,7 @@ class TestLocalCloudCreation:
             "dna:small.medium.large",
         ],
     )
-    def test_add_client_bad_san(self, san):
+    def test_add_client_bad_san(self, san, mock_pyrrowhead_path):
         res = runner.invoke(
             app,
             f"cloud client-add test-cloud.test-org -n bad --san {san}".split(),
@@ -158,7 +158,7 @@ class TestLocalCloudCreation:
     def test_cloud_config_general(self, cloud_config):
 
         assert cloud_config["cloud_name"] == self.cloud_name
-        assert cloud_config["organization_name"] == self.org_name
+        assert cloud_config["org_name"] == self.org_name
         assert cloud_config["ssl_enabled"] == True
         assert cloud_config["subnet"] == self.ip_network
         assert set(cloud_config["core_san"]) == {self.san_1, self.san_2}
@@ -253,12 +253,12 @@ class TestLocalCloudCreation:
 
     def test_root_certs_installed(self, mock_pyrrowhead_path):
         org_path = mock_pyrrowhead_path.joinpath(LOCAL_CLOUDS_SUBDIR, self.org_name)
-        root_cert_path = org_path.joinpath("root-certs", "crypto")
+        root_cert_path = org_path.joinpath("root_certs", "crypto")
         assert {"root.crt", "root.p12"} == path_names(root_cert_path)
 
     def test_org_certs_installed(self, mock_pyrrowhead_path):
         org_path = mock_pyrrowhead_path.joinpath(LOCAL_CLOUDS_SUBDIR, self.org_name)
-        org_cert_path = org_path.joinpath("org-certs", "crypto")
+        org_cert_path = org_path.joinpath("org_certs", "crypto")
         assert cert_names([self.org_name]) == path_names(org_cert_path)
 
     def test_cloud_certs_installed(self, mock_pyrrowhead_path):
@@ -306,6 +306,11 @@ class TestLocalCloudCreation:
 
 
 class TestCreateInputOptions:
+    @pytest.fixture(scope="function", autouse=True)
+    def clear_pyrrowhead_dir(self, mock_pyrrowhead_path):
+        yield
+        shutil.rmtree(mock_pyrrowhead_path)
+
     def test_no_arguments(self, mock_pyrrowhead_path):
         ret = runner.invoke(app, "cloud create".split())
 
@@ -535,7 +540,7 @@ class TestBadPyrrowheadDirSetup:
         "key",
         [
             "cloud_name",
-            "organization_name",
+            "org_name",
             "ssl_enabled",
             "subnet",
             "core_san",
