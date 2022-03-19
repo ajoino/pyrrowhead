@@ -416,7 +416,7 @@ class TestCreateInputOptions:
         )
 
         debug_runner_output(ret)
-        assert ret.exit_code == 0
+        assert ret.exit_code == -1
 
 
 class TestBadPyrrowheadDirSetup:
