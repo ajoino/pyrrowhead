@@ -10,8 +10,7 @@ from pyrrowhead.cloud.installation import (
     uninstall_cloud,
 )
 from pyrrowhead.cloud.create import CloudConfiguration, create_cloud_config
-from pyrrowhead.cloud.start import start_local_cloud
-from pyrrowhead.cloud.stop import stop_local_cloud
+from pyrrowhead.cloud.run import start_local_cloud, stop_local_cloud
 from pyrrowhead.cloud.configuration import enable_ssl as enable_ssl_func
 from pyrrowhead.cloud.client_add import add_client_system
 from pyrrowhead.utils import (
