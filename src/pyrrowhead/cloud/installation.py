@@ -5,8 +5,8 @@ from collections import OrderedDict
 from functools import partial
 from importlib.resources import path
 from pathlib import Path
+from typing import Dict
 
-import typer
 import yaml
 import yamlloader
 from jinja2 import Environment, PackageLoader, select_autoescape
@@ -16,12 +16,20 @@ from pyrrowhead import rich_console, database_config
 from pyrrowhead.database_config.passwords import db_passwords
 from pyrrowhead.new_certificate_generation.generate_certificates import (
     setup_certificates,
+    generate_certificates,
+    store_sysop,
+    store_root_files,
+    store_org_files,
+    store_cloud_cert,
+    store_system_files,
+    store_truststore,
 )
 from pyrrowhead.types_ import CloudDict
 from pyrrowhead.utils import (
     get_config,
     set_config,
     validate_cloud_config_file,
+    PyrrowheadError,
 )
 from pyrrowhead.constants import CLOUD_CONFIG_FILE_NAME
 
@@ -30,25 +38,125 @@ yaml_safedump = partial(yaml.dump, Dumper=yamlloader.ordereddict.CSafeDumper)
 
 
 def install_cloud(
-    config_file_path,
-    installation_target,
+    cloud_dir,
     cloud_password,
     org_password,
 ):
-    cloud_config = validate_cloud_config_file(config_file_path)
+    cloud_config = validate_cloud_config_file(
+        cloud_dir.joinpath(CLOUD_CONFIG_FILE_NAME)
+    )
 
     with rich_console.status(Text("Installing Arrowhead local cloud...")):
-        generate_cloud_files(
-            cloud_config, config_file_path, installation_target, cloud_password
-        )
-        initialize_cloud(
-            installation_target,
-            cloud_config["cloud_name"],
-            cloud_config["org_name"],
-            cloud_password=cloud_password,
-            org_password=org_password,
-        )
-    rich_console.print("Finished installing the [blue]Arrowhead[/blue] local cloud!")
+        try:
+            files_created = []
+            core_system_config_file_strings = generate_config_files(
+                cloud_config, cloud_dir, cloud_password
+            )
+            rich_console.print(Text("Generated core system configuration files."))
+            docker_compose_content = generate_docker_compose_file(
+                cloud_config, cloud_dir, cloud_password
+            )
+            rich_console.print(Text("Generated docker-compose.yml."))
+            (
+                root_data,
+                org_data,
+                cloud_data,
+                sysop_data,
+                system_keycerts,
+            ) = generate_certificates(
+                cloud_config,
+                cloud_dir,
+                cloud_password,
+                org_password,
+            )
+            stored_root_paths = store_root_files(
+                *root_data,
+                password="123456",
+            )
+            files_created.extend(stored_root_paths)
+            stored_org_paths = store_org_files(
+                cloud_config["org_name"],
+                *org_data,
+                root_keycert=root_data[1],
+                password=org_password,
+            )
+            files_created.extend(stored_org_paths)
+            stored_cloud_paths = store_cloud_cert(
+                cloud_config["cloud_name"],
+                cloud_config["org_name"],
+                *cloud_data,
+                org_keycert=org_data[1],
+                root_keycert=root_data[1],
+                password=cloud_password,
+            )
+            files_created.extend(stored_cloud_paths)
+            stored_sysop_paths = store_sysop(
+                cloud_config["cloud_name"],
+                *sysop_data,
+                root_keycert=root_data[1],
+                org_keycert=org_data[1],
+                cloud_keycert=cloud_data[1],
+                password=cloud_password,
+            )
+            files_created.extend(stored_sysop_paths)
+            system_paths = []
+            for keycert_path, keycert in system_keycerts.items():
+                _system_paths = store_system_files(
+                    keycert_path,
+                    keycert,
+                    root_keycert=root_data[1],
+                    org_keycert=org_data[1],
+                    cloud_keycert=cloud_data[1],
+                    password=cloud_password,
+                )
+                system_paths.append(_system_paths)
+            files_created.extend(system_paths)
+            truststore_paths = store_truststore(
+                cloud_data[0],
+                cloud_data[1].cert,
+                password=cloud_password,
+            )
+            files_created.extend(truststore_paths)
+            rich_console.print("Generated truststore.p12")
+            cloud_dir.joinpath("core_system_config").mkdir(parents=True)
+            for (
+                core_config_path,
+                core_config,
+            ) in core_system_config_file_strings.items():
+                with open(core_config_path, "w") as core_config_file:
+                    core_config_file.write(core_config)
+            with open(cloud_dir.joinpath("docker-compose.yml"), "w") as docker_file:
+                yaml_safedump(docker_compose_content, docker_file)
+            with path(database_config, "initSQL.sh") as init_sql_path:
+                copy_path = shutil.copy(init_sql_path, cloud_dir)
+                print(f"{copy_path = }")
+            if not check_sql_initialized(cloud_dir):
+                subprocess.run(["./initSQL.sh"], cwd=cloud_dir, capture_output=True)
+                rich_console.print(Text("Initialized SQL tables."))
+            if not check_mysql_volume_exists(
+                cloud_config["cloud_name"], cloud_config["org_name"]
+            ):
+                subprocess.run(
+                    f"docker volume create --name mysql.{cloud_config['cloud_name']}."
+                    f"{cloud_config['org_name']}".split(),
+                    capture_output=True,
+                )
+                rich_console.print(Text("Created docker volume."))
+            rich_console.print(Text("Copied files."))
+        except PyrrowheadError as e:
+            shutil.rmtree(cloud_dir.joinpath("sql"))
+            shutil.rmtree(cloud_dir.joinpath("certs"))
+            cloud_dir.joinpath("docker-compose.yml")
+            cloud_dir.joinpath("initSQL.sh")
+            for _path in files_created:
+                _path.unlinx()
+            raise PyrrowheadError(
+                "An error occured during the installation, removing all created files."
+            ) from e
+        else:
+            rich_console.print(
+                "Finished installing the [blue]Arrowhead[/blue] local cloud!"
+            )
 
 
 def uninstall_cloud(
@@ -81,12 +189,14 @@ def uninstall_cloud(
     rich_console.print("Uninstallation complete")
 
 
-def generate_config_files(cloud_config: CloudDict, target_path, password):
+def generate_config_files(
+    cloud_config: CloudDict, cloud_dir, password
+) -> Dict[Path, str]:
     """
     Creates the property files for all core services in yaml_path
     Args:
         yaml_path: Path to cloud config
-        target_path: Path to cloud directory
+        cloud_dir: Path to cloud directory
     """
     env = Environment(
         loader=PackageLoader("pyrrowhead"), autoescape=select_autoescape()
@@ -97,6 +207,7 @@ def generate_config_files(cloud_config: CloudDict, target_path, password):
     sr_address = core_systems["service_registry"]["address"]
     sr_port = core_systems["service_registry"]["port"]
 
+    config_file_strings = {}
     for system, config in core_systems.items():
         system_cn = (
             f'{config["domain"]}.{cloud_config["cloud_name"]}.'
@@ -116,15 +227,18 @@ def generate_config_files(cloud_config: CloudDict, target_path, password):
             cert_pw=password,
         )
 
-        core_system_config_path = Path(target_path) / "core_system_config"
-        core_system_config_path.mkdir(parents=True, exist_ok=True)
-        with open(
-            core_system_config_path / f"{system}.properties", "w+"
-        ) as target_file:
-            target_file.write(system_config_file)
+        core_system_config_path = Path(cloud_dir).joinpath(
+            "core_system_config", f"{system}.properties"
+        )
+
+        config_file_strings[core_system_config_path] = system_config_file
+
+    return config_file_strings
 
 
-def generate_docker_compose_file(cloud_config: CloudDict, target_path, password):
+def generate_docker_compose_file(
+    cloud_config: CloudDict, target_path, password
+) -> Dict:
     cloud_identifier = f'{cloud_config["cloud_name"]}.{cloud_config["org_name"]}'
     docker_compose_content = OrderedDict(
         {
@@ -176,28 +290,7 @@ def generate_docker_compose_file(cloud_config: CloudDict, target_path, password)
             "ports": [f'{config["port"]}:{config["port"]}'],
         }
 
-    with open(Path(target_path) / "docker-compose.yml", "w+") as target_file:
-        yaml_safedump(docker_compose_content, target_file)
-
-
-def generate_cloud_files(cloud_config, yaml_path, target_path, password):
-    generate_config_files(cloud_config, target_path, password)
-    rich_console.print(Text("Generated core system configuration files."))
-    generate_docker_compose_file(cloud_config, target_path, password)
-    rich_console.print(Text("Generated docker-compose.yml."))
-    # Copy files that need not be generated
-    with path(database_config, "initSQL.sh") as init_sql_path:
-        shutil.copy(init_sql_path, target_path)
-    # with path(certificate_generation, "lib_certs.sh") as lib_cert_path:
-    #    shutil.copy(lib_cert_path, target_path / "certgen")
-    # with path(certificate_generation, "rm_certs.sh") as rm_certs_path:
-    #    shutil.copy(rm_certs_path, target_path / "certgen")
-    # Copy the config file
-    try:
-        shutil.copy(yaml_path.absolute(), target_path)
-    except shutil.SameFileError:
-        pass
-    rich_console.print(Text("Copied files."))
+    return docker_compose_content
 
 
 def check_sql_initialized(cloud_directory):
@@ -215,8 +308,6 @@ def check_mysql_volume_exists(cloud_name, org_name):
 
 def initialize_cloud(
     cloud_directory,
-    cloud_name,
-    organization_name,
     cloud_password,
     org_password,
 ):
@@ -226,13 +317,3 @@ def initialize_cloud(
         org_password=org_password,
     )
     rich_console.print(Text("Created certificates."))
-    if not check_sql_initialized(cloud_directory):
-        subprocess.run(["./initSQL.sh"], cwd=cloud_directory, capture_output=True)
-        rich_console.print(Text("Initialized SQL tables."))
-    if not check_mysql_volume_exists(cloud_name, organization_name):
-        subprocess.run(
-            f"docker volume create --name mysql.{cloud_name}."
-            f"{organization_name}".split(),
-            capture_output=True,
-        )
-        rich_console.print(Text("Created docker volume."))

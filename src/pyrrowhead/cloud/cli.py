@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, List, Tuple, Callable
+from typing import Optional, List, Callable
 from functools import wraps
 
 import typer
@@ -19,9 +19,6 @@ from pyrrowhead.utils import (
     get_config,
     PyrrowheadError,
     get_local_cloud_directory,
-)
-from pyrrowhead.constants import (
-    CLOUD_CONFIG_FILE_NAME,
 )
 
 
@@ -48,12 +45,15 @@ def cloud_name_callback(ctx: typer.Context, cloud_name: Optional[str]) -> str:
     if cloud_name is not None and cloud_name != "":
         if ctx.params.get("cloud_identifier") is not None:
             rich_console.print(
-                "CLOUD_IDENTIFIER and the CLOUD_NAME and ORG_NAME options are mutually exclusive."
+                "CLOUD_IDENTIFIER and the CLOUD_NAME and"
+                " ORG_NAME options are mutually exclusive."
             )
             raise typer.Exit(-1)
         return cloud_name
     elif ctx.params.get("cloud_identifier") is None:
-        rich_console.print("CLOUD_IDENTIFIER or CLOUD_NAME and ORG_NAME must be given.")
+        rich_console.print(
+            "CLOUD_IDENTIFIER or CLOUD_NAME and" " ORG_NAME must be given."
+        )
         raise typer.Exit(-1)
 
     cloud_name, _ = ctx.params.get("cloud_identifier").split(".")
@@ -225,10 +225,7 @@ def install(
 
     CLOUD_NAME and ORG_name are the cloud and organization names used in the generated certificates.
     """  # noqa
-    config_file = cloud_directory / CLOUD_CONFIG_FILE_NAME
-
     install_cloud(
-        config_file,
         cloud_directory,
         cloud_password=cloud_password,
         org_password=org_password,
