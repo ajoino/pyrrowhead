@@ -5,7 +5,6 @@ from collections import ChainMap
 from datetime import datetime, timedelta
 from typing import Tuple, List, Optional, Dict, NamedTuple
 
-import yaml
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from cryptography.hazmat.primitives import hashes, serialization
@@ -18,7 +17,7 @@ from cryptography.x509 import Certificate, CertificateSigningRequest
 from cryptography.x509.oid import NameOID
 
 from pyrrowhead.constants import ORG_CERT_DIR, ROOT_CERT_DIR
-from pyrrowhead.types_ import ConfigDict, CloudDict
+from pyrrowhead.types_ import CloudDict
 from pyrrowhead.utils import PyrrowheadError, validate_san
 
 
@@ -335,31 +334,11 @@ def store_truststore(
     return [cert_directory / "truststore.p12"]
 
 
-def generate_and_store_root_files(
-    root_cert_directory: Path, password=Optional[str]
-) -> KeyCertPair:
-    root_keycert = generate_root_certificate()
-    with open(root_cert_directory / "root.p12", "wb") as root_p12:
-        root_p12.write(
-            serialize_p12(
-                name=b"arrowhead.eu",
-                key=root_keycert.key,
-                cert=root_keycert.cert,
-                cas=None,
-                encryption_algorithm=set_password_encryption(password),
-            )
-        )
-    with open(root_cert_directory / "root.crt", "wb") as root_crt:
-        root_crt.write(root_keycert.cert.public_bytes(serialization.Encoding.PEM))
-
-    return root_keycert
-
-
 def store_root_files(
     root_cert_directory: Path,
     root_keycert: KeyCertPair,
     password=Optional[str],
-) -> KeyCertPair:
+) -> List[Path]:
     if not root_cert_directory.exists():
         root_cert_directory.mkdir(parents=True)
     with open((pkcs12_path := root_cert_directory / "root.p12"), "wb") as root_p12:
@@ -376,44 +355,6 @@ def store_root_files(
         root_crt.write(root_keycert.cert.public_bytes(serialization.Encoding.PEM))
 
     return [pkcs12_path, crt_path]
-
-
-def generate_and_store_org_files(
-    org_name: str,
-    org_cert_dir: Path,
-    root_key,
-    root_cert,
-    password: Optional[str],
-) -> KeyCertPair:
-    org_keycert = generate_ca_cert(
-        f"{org_name}.arrowhead.eu",
-        ca=True,
-        path_length=None,
-        issuer_cert=root_cert,
-        issuer_key=root_key,
-    )
-    with open(org_cert_dir / f"{org_name}.p12", "wb") as org_p12:
-        org_p12.write(
-            serialize_p12(
-                name=f"{org_name}.arrowhead.eu".encode(),
-                key=org_keycert.key,
-                cert=org_keycert.cert,
-                cas=[root_cert],
-                encryption_algorithm=set_password_encryption(password),
-            )
-        )
-    with open(org_cert_dir / f"{org_name}.crt", "wb") as crt_org:
-        crt_org.write(org_keycert.cert.public_bytes(serialization.Encoding.PEM))
-    with open(org_cert_dir / f"{org_name}.key", "wb") as key_org:
-        key_org.write(
-            org_keycert.key.private_bytes(
-                serialization.Encoding.PEM,
-                serialization.PrivateFormat.TraditionalOpenSSL,
-                encryption_algorithm=serialization.NoEncryption(),
-            )
-        )
-
-    return org_keycert
 
 
 def store_org_files(
@@ -447,45 +388,6 @@ def store_org_files(
         )
 
     return [pkcs12_path, crt_path, key_path]
-
-
-def generate_and_store_cloud_cert(
-    cloud_name: str,
-    org_name: str,
-    cloud_cert_dir: Path,
-    org_key: RSAPrivateKey,
-    org_cert: Certificate,
-    root_cert: Certificate,
-    password: Optional[str],
-) -> KeyCertPair:
-    cloud_keycert = generate_ca_cert(
-        f"{cloud_name}.{org_name}.arrowhead.eu",
-        ca=True,
-        path_length=2,
-        issuer_cert=org_cert,
-        issuer_key=org_key,
-    )
-    with open(cloud_cert_dir / f"{cloud_name}.p12", "wb") as cloud_p12:
-        cloud_p12.write(
-            serialize_p12(
-                name=f"{cloud_name}.{org_name}.arrowhead.eu".encode(),
-                key=cloud_keycert.key,
-                cert=cloud_keycert.cert,
-                cas=[org_cert, root_cert],
-                encryption_algorithm=set_password_encryption(password),
-            )
-        )
-    with open(cloud_cert_dir / f"{cloud_name}.crt", "wb") as cloud_crt:
-        cloud_crt.write(cloud_keycert.cert.public_bytes(serialization.Encoding.PEM))
-    with open(cloud_cert_dir / f"{cloud_name}.key", "wb") as cloud_key_file:
-        cloud_key_file.write(
-            cloud_keycert.key.private_bytes(
-                serialization.Encoding.PEM,
-                serialization.PrivateFormat.TraditionalOpenSSL,
-                encryption_algorithm=serialization.NoEncryption(),
-            )
-        )
-    return cloud_keycert
 
 
 def store_cloud_cert(
@@ -523,67 +425,6 @@ def store_cloud_cert(
             )
         )
     return [pkcs12_path, crt_path, key_path]
-
-
-def generate_cloud_files(
-    cloud_config: ConfigDict,
-    cloud_cert_dir: Path,
-    cloud_key: RSAPrivateKey,
-    cloud_cert: Certificate,
-    org_cert: Certificate,
-    root_cert: Certificate,
-    password: str,
-):
-    cloud_name = cloud_config["cloud"]["cloud_name"]
-    org_name = cloud_config["cloud"]["org_name"]
-
-    core_system_certs = generate_core_system_certs(cloud_config, cloud_cert, cloud_key)
-    client_system_certs = generate_client_system_certs(
-        cloud_config, cloud_cert, cloud_key
-    )
-    sysop_cert = generate_system_cert(
-        f"sysop.{cloud_name}.{org_name}.arrowhead.eu",
-        None,
-        issuer_cert=cloud_cert,
-        issuer_key=cloud_key,
-    )
-
-    if not all(
-        (cloud_cert_dir / "sysop").with_suffix(suf).exists()
-        for suf in (".p12", ".crt", ".key", ".ca")
-    ):
-        store_sysop(
-            sysop_cert, root_cert, org_cert, cloud_cert, cloud_cert_dir, password
-        )
-    for core_name, core_cert in core_system_certs.items():
-        if all(
-            (core_cert_path := cloud_cert_dir / core_name).with_suffix(suf).exists()
-            for suf in (".p12", ".crt", ".key")
-        ):
-            continue
-        store_system_files(
-            core_cert,
-            core_cert_path,  # noqa
-            root_cert,
-            org_cert,
-            cloud_cert,
-            password,
-        )
-    for client_name, client_cert in client_system_certs.items():
-        if all(
-            (client_cert_path := cloud_cert_dir / client_name).with_suffix(suf).exists()
-            for suf in {".p12", ".crt", ".key"}
-        ):
-            continue
-        store_system_files(
-            client_cert,
-            client_cert_path,  # noqa
-            root_cert,
-            org_cert,
-            cloud_cert,
-            password,
-        )
-    store_truststore(cloud_cert, cloud_cert_dir, password)
 
 
 CERTIFICATE_BUNDLE_TYPE = Tuple[
@@ -667,7 +508,7 @@ def generate_certificates(
         with open(
             cloud_cert_dir / f"{cloud_config['cloud_name']}.p12", "rb"
         ) as cloud_cert_file:
-            cloud_key, cloud_cert, ca_certs = load_p12(  # type: ignore
+            cloud_key, cloud_cert, ca_certs = load_p12(  #
                 cloud_cert_file.read(), cloud_password.encode()
             )
             if len(ca_certs) != 2:
@@ -675,7 +516,7 @@ def generate_certificates(
                     f"Cloud cert must have exactly two CAs, "
                     f"currently have {len(ca_certs)}."
                 )
-            cloud_keycert = KeyCertPair(cloud_key, cloud_cert)
+            cloud_keycert = KeyCertPair(cloud_key, cloud_cert)  # type: ignore
 
     sysop_keycert = generate_system_cert(
         f"sysop.{cloud_config['cloud_name']}.{cloud_config['org_name']}.arrowhead.eu",
@@ -706,100 +547,3 @@ def generate_certificates(
         (cloud_cert_dir, sysop_keycert),
         system_keys_and_certs,
     )
-
-
-def setup_certificates(
-    cloud_config_path: Path,
-    cloud_password: str,
-    org_password: str,
-) -> Dict[Path, KeyCertPair]:
-    with open(cloud_config_path, "r") as cloud_config_file:
-        cloud_config: ConfigDict = yaml.safe_load(cloud_config_file)
-
-    cloud_name = cloud_config["cloud"]["cloud_name"]
-    org_name = cloud_config["cloud"]["org_name"]
-
-    cloud_dir = cloud_config_path.parent
-    cloud_cert_dir = cloud_dir / "certs/crypto/"
-    org_cert_dir = cloud_dir.parent / f"{ORG_CERT_DIR}/crypto/"
-    root_cert_dir = cloud_dir.parent / f"{ROOT_CERT_DIR}/crypto"
-
-    certificates_to_store = {}
-    # TODO: Invert this horrible stack of ifs
-    if not cloud_cert_dir.exists():
-        print("Cloud cert does not exist, generating from organization cert...")
-        if not org_cert_dir.exists():
-            print("Organization cert does not exist, generating from root cert...")
-            if not root_cert_dir.exists():
-                print("Root cert does not exist, generating self-signed root cert.")
-                root_cert_dir.mkdir(parents=True)
-                root_key, root_cert = generate_and_store_root_files(
-                    root_cert_dir, "123456"  # Self signed roots are insecure.
-                )
-            else:
-                with open(root_cert_dir / "root.p12", "rb") as root_p12:
-                    root_key, root_cert, *_ = load_p12(  # type: ignore
-                        root_p12.read(), "123456".encode()
-                    )  # noqa
-                    if not isinstance(root_key, RSAPrivateKey) or not isinstance(
-                        root_cert, Certificate
-                    ):
-                        raise PyrrowheadError("Could not open root key or certificate")
-
-            org_cert_dir.mkdir(parents=True)
-            org_key, org_cert = generate_and_store_org_files(  # type: ignore
-                org_name,
-                org_cert_dir,
-                root_key,
-                root_cert,
-                org_password,
-            )
-        else:
-            with open(org_cert_dir / f"{org_name}.p12", "rb") as org_p12:
-                org_key, org_cert, ca_certs = load_p12(  # type: ignore
-                    org_p12.read(), org_password.encode()
-                )
-                if not isinstance(org_key, RSAPrivateKey) or not isinstance(
-                    org_cert, Certificate
-                ):
-                    raise PyrrowheadError("Could not read org key or certificate")
-                if len(ca_certs) != 1:
-                    raise PyrrowheadError(
-                        f"Organization certificate can only have one CA, "
-                        f"currently has {len(ca_certs)}."
-                    )
-                root_cert = ca_certs[0]
-
-        cloud_cert_dir.mkdir(parents=True)
-        cloud_key, cloud_cert = generate_and_store_cloud_cert(
-            cloud_name,
-            org_name,
-            cloud_cert_dir,
-            org_key,
-            org_cert,
-            root_cert,
-            cloud_password,
-        )
-    else:
-        with open(cloud_cert_dir / f"{cloud_name}.p12", "rb") as cloud_cert_file:
-            cloud_key, cloud_cert, ca_certs = load_p12(  # type: ignore
-                cloud_cert_file.read(), cloud_password.encode()
-            )
-            if len(ca_certs) != 2:
-                raise RuntimeError(
-                    f"Cloud cert must have exactly two CAs, "
-                    f"currently have {len(ca_certs)}."
-                )
-            org_cert, root_cert = ca_certs
-
-    generate_cloud_files(
-        cloud_config,
-        cloud_cert_dir,
-        cloud_key,
-        cloud_cert,
-        org_cert,
-        root_cert,
-        cloud_password,
-    )
-
-    return certificates_to_store

@@ -15,7 +15,6 @@ from rich.text import Text
 from pyrrowhead import rich_console, database_config
 from pyrrowhead.database_config.passwords import db_passwords
 from pyrrowhead.new_certificate_generation.generate_certificates import (
-    setup_certificates,
     generate_certificates,
     store_sysop,
     store_root_files,
@@ -304,16 +303,3 @@ def check_mysql_volume_exists(cloud_name, org_name):
     ).stdout.decode()
     # If mysql volume doesn't exists in stdout find returns -1
     return ps_output.find(f"mysql.{cloud_name}.{org_name}") != -1
-
-
-def initialize_cloud(
-    cloud_directory,
-    cloud_password,
-    org_password,
-):
-    setup_certificates(
-        cloud_directory / "cloud_config.yaml",
-        cloud_password=cloud_password,
-        org_password=org_password,
-    )
-    rich_console.print(Text("Created certificates."))

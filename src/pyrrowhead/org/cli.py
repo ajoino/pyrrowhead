@@ -8,16 +8,17 @@ import typer
 
 from pyrrowhead.org.initialize_org import (
     mk_org_dir,
-    populate_org_dir,
     copy_org_certificates,
 )
 from pyrrowhead import rich_console
 from pyrrowhead.utils import (
     PyrrowheadError,
     check_valid_dns,
+    get_pyrrowhead_path,
 )
 from pyrrowhead.constants import (
     ARG_ORG_NAME,
+    LOCAL_CLOUDS_SUBDIR,
 )
 
 
@@ -29,6 +30,7 @@ def create(org_name: str = ARG_ORG_NAME):
     """
     Initializes an empty organization with name ORG_NAME.
     """
+    org_dir = get_pyrrowhead_path().joinpath(LOCAL_CLOUDS_SUBDIR, org_name)
     if not check_valid_dns(org_name):
         rich_console.print(
             PyrrowheadError(f'"{org_name}" is not a valid organization name.')
@@ -36,7 +38,7 @@ def create(org_name: str = ARG_ORG_NAME):
         raise typer.Exit(-1)
 
     try:
-        mk_org_dir(org_name)
+        mk_org_dir(org_name, org_dir)
     except PyrrowheadError as e:
         rich_console.print(str(e))
         raise typer.Exit(-1)
@@ -46,8 +48,7 @@ def create(org_name: str = ARG_ORG_NAME):
 
 @org_app.command()
 def cert_gen(org_name: str = ARG_ORG_NAME):
-    password = "123456"
-    populate_org_dir(org_name, password)
+    password = "123456"  # noqa
 
 
 @org_app.command()

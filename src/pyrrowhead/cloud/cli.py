@@ -56,15 +56,16 @@ def cloud_name_callback(ctx: typer.Context, cloud_name: Optional[str]) -> str:
         )
         raise typer.Exit(-1)
 
-    cloud_name, _ = ctx.params.get("cloud_identifier").split(".")
-    return cloud_name
+    cloud_name, _ = ctx.params.get("cloud_identifier").split(".")  # type: ignore
+    return cloud_name  # type: ignore
 
 
 def org_name_callback(ctx: typer.Context, org_name: Optional[str]) -> str:
     if org_name is not None and org_name != "":
         if ctx.params.get("cloud_identifier") is not None:
             rich_console.print(
-                "CLOUD_IDENTIFIER and the CLOUD_NAME and ORG_NAME options are mutually exclusive."
+                "CLOUD_IDENTIFIER and the CLOUD_NAME and "
+                "ORG_NAME options are mutually exclusive."
             )
             raise typer.Exit(-1)
         return org_name
@@ -72,8 +73,8 @@ def org_name_callback(ctx: typer.Context, org_name: Optional[str]) -> str:
         rich_console.print("CLOUD_IDENTIFIER or CLOUD_NAME and ORG_NAME must be given.")
         raise typer.Exit(-1)
 
-    _, org_name = ctx.params.get("cloud_identifier").split(".")
-    return org_name
+    _, org_name = ctx.params.get("cloud_identifier").split(".")  # type: ignore
+    return org_name  # type: ignore
 
 
 OPT_CLOUD_NAME = typer.Option(
