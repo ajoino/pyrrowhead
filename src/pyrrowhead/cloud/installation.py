@@ -131,12 +131,12 @@ def install_cloud(
             files_created.extend(truststore_paths)
             rich_console.print("Generated truststore.p12")
             with path(database_config, "initSQL.sh") as init_sql_path:
-                copy_path = Path(shutil.copy(init_sql_path, cloud_dir))
-                files_created.append(copy_path)
+                copy_path = shutil.copy(init_sql_path, cloud_dir)
+                files_created.append(Path(copy_path))
             if not check_sql_initialized(cloud_dir):
                 subprocess.run(["./initSQL.sh"], cwd=cloud_dir, capture_output=True)
-                rich_console.print(Text("Initialized SQL tables."))
                 files_created.extend(cloud_dir.joinpath("sql").glob("**/*"))
+                rich_console.print(Text("Initialized SQL tables."))
             rich_console.print(Text("Copied files."))
             if not check_mysql_volume_exists(
                 cloud_config["cloud_name"], cloud_config["org_name"]
@@ -147,7 +147,7 @@ def install_cloud(
                     capture_output=True,
                 )
                 rich_console.print(Text("Created docker volume."))
-        except PyrrowheadError as e:
+        except (PyrrowheadError, OSError, FileNotFoundError) as e:
             for p in files_created:
                 if p.is_file():
                     p.unlink()

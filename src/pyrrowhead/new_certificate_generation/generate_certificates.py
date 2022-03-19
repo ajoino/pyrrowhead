@@ -241,9 +241,6 @@ def store_system_files(
         0
     ].value
 
-    if not system_cert_path.parent.exists():
-        system_cert_path.parent.mkdir(parents=True)
-
     with open((p12_path := system_cert_path.with_suffix(".p12")), "wb") as p12_file:
         p12_file.write(
             serialize_p12(
@@ -278,8 +275,6 @@ def store_sysop(
     cloud_keycert: KeyCertPair,
     password: Optional[str],
 ):
-    if not cert_directory.exists():
-        cert_directory.mkdir(parents=True)
     return_list = []
     with open((sysop_p12 := cert_directory / "sysop.p12"), "wb") as p12_file:
         p12_file.write(

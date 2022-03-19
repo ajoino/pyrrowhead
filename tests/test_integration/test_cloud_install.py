@@ -5,6 +5,8 @@ from typer.testing import CliRunner
 
 from pyrrowhead.main import app
 from pyrrowhead.constants import CLOUD_CONFIG_FILE_NAME
+from pyrrowhead.cloud import installation
+from pyrrowhead.utils import PyrrowheadError
 
 from tests.test_integration.conftest import debug_runner_output
 
@@ -115,6 +117,68 @@ class TestCloudInstall:
 
         debug_runner_output(res)
         assert res.exit_code == -1
+
+    def test_sql_already_initialized(self, mock_pyrrowhead_path):
+        sql_file = mock_pyrrowhead_path.joinpath(
+            "local-clouds/install-test-org/install-test-cloud/sql/create_empty_arrowhead_db.sql"
+        )
+        sql_file.parent.mkdir(parents=True)
+        sql_file.touch()
+
+        res = runner.invoke(app, f"cloud install install-test-cloud.install-test-org")
+
+        debug_runner_output(res)
+        assert res.exit_code == 0
+        assert not sql_file.parent.joinpath(
+            "privileges/create_arrowhead_tables.sql"
+        ).exists()
+
+    @pytest.fixture
+    def mock_generate_config(self, mock_pyrrowhead_path, monkeypatch):
+        def mockreturn(*args, **kwargs):
+            raise PyrrowheadError("Testing early error.")
+
+        monkeypatch.setattr(installation, "generate_config_files", mockreturn)
+
+    def test_install_crash_early(self, mock_pyrrowhead_path, mock_generate_config):
+        res = runner.invoke(app, f"cloud install install-test-cloud.install-test-org")
+
+        debug_runner_output(res)
+        assert res.exit_code == -1
+        assert (
+            len(
+                list(
+                    mock_pyrrowhead_path.joinpath(
+                        "local-clouds/install-test-org/install-test-cloud/"
+                    ).iterdir()
+                )
+            )
+            == 1
+        )
+
+    @pytest.fixture
+    def mock_check_mysql(self, mock_pyrrowhead_path, monkeypatch):
+        def mockreturn(*args, **kwargs):
+            raise PyrrowheadError("Testing early error.")
+
+        monkeypatch.setattr(installation, "check_mysql_volume_exists", mockreturn)
+
+    def test_install_crash_late(self, mock_pyrrowhead_path, mock_check_mysql):
+        res = runner.invoke(app, f"cloud install install-test-cloud.install-test-org")
+
+        debug_runner_output(res)
+        assert res.exit_code == -1
+        assert (
+                len(
+                        list(
+                                mock_pyrrowhead_path.joinpath(
+                                        "local-clouds/install-test-org/install-test-cloud/"
+                                ).iterdir()
+                        )
+                )
+                == 4
+        )
+
 
 
 class TestCloudUninstall:
