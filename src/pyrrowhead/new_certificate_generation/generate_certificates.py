@@ -236,7 +236,7 @@ def store_system_files(
     org_keycert: KeyCertPair,
     cloud_keycert: KeyCertPair,
     password: Optional[str],
-):
+) -> List[Path]:
     core_name = system_keycert.cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[
         0
     ].value
@@ -244,7 +244,7 @@ def store_system_files(
     if not system_cert_path.parent.exists():
         system_cert_path.parent.mkdir(parents=True)
 
-    with open(system_cert_path.with_suffix(".p12"), "wb") as p12_file:
+    with open((p12_path := system_cert_path.with_suffix(".p12")), "wb") as p12_file:
         p12_file.write(
             serialize_p12(
                 name=core_name.encode(),
@@ -255,9 +255,9 @@ def store_system_files(
             )
         )
         print(root_keycert.cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME))
-    with open(system_cert_path.with_suffix(".crt"), "wb") as crt_file:
+    with open((crt_path := system_cert_path.with_suffix(".crt")), "wb") as crt_file:
         crt_file.write(system_keycert.cert.public_bytes(serialization.Encoding.PEM))
-    with open(system_cert_path.with_suffix(".key"), "wb") as key_file:
+    with open((key_path := system_cert_path.with_suffix(".key")), "wb") as key_file:
         key_file.write(
             system_keycert.key.private_bytes(
                 serialization.Encoding.PEM,
@@ -265,6 +265,8 @@ def store_system_files(
                 encryption_algorithm=set_password_encryption(password),
             )
         )
+
+    return [p12_path, crt_path, key_path]
 
 
 def store_sysop(

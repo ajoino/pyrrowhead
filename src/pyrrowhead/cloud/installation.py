@@ -51,10 +51,23 @@ def install_cloud(
             core_system_config_file_strings = generate_config_files(
                 cloud_config, cloud_dir, cloud_password
             )
+            cloud_dir.joinpath("core_system_config").mkdir(parents=True)
+            for (
+                core_config_path,
+                core_config,
+            ) in core_system_config_file_strings.items():
+                with open(core_config_path, "w") as core_config_file:
+                    core_config_file.write(core_config)
+                files_created.append(core_config_path)
             rich_console.print(Text("Generated core system configuration files."))
             docker_compose_content = generate_docker_compose_file(
                 cloud_config, cloud_dir, cloud_password
             )
+            with open(
+                (compose_path := cloud_dir.joinpath("docker-compose.yml")), "w"
+            ) as docker_file:
+                yaml_safedump(docker_compose_content, docker_file)
+                files_created.append(compose_path)
             rich_console.print(Text("Generated docker-compose.yml."))
             (
                 root_data,
@@ -108,7 +121,7 @@ def install_cloud(
                     cloud_keycert=cloud_data[1],
                     password=cloud_password,
                 )
-                system_paths.append(_system_paths)
+                system_paths.extend(_system_paths)
             files_created.extend(system_paths)
             truststore_paths = store_truststore(
                 cloud_data[0],
@@ -117,21 +130,14 @@ def install_cloud(
             )
             files_created.extend(truststore_paths)
             rich_console.print("Generated truststore.p12")
-            cloud_dir.joinpath("core_system_config").mkdir(parents=True)
-            for (
-                core_config_path,
-                core_config,
-            ) in core_system_config_file_strings.items():
-                with open(core_config_path, "w") as core_config_file:
-                    core_config_file.write(core_config)
-            with open(cloud_dir.joinpath("docker-compose.yml"), "w") as docker_file:
-                yaml_safedump(docker_compose_content, docker_file)
             with path(database_config, "initSQL.sh") as init_sql_path:
-                copy_path = shutil.copy(init_sql_path, cloud_dir)
-                print(f"{copy_path = }")
+                copy_path = Path(shutil.copy(init_sql_path, cloud_dir))
+                files_created.append(copy_path)
             if not check_sql_initialized(cloud_dir):
                 subprocess.run(["./initSQL.sh"], cwd=cloud_dir, capture_output=True)
                 rich_console.print(Text("Initialized SQL tables."))
+                files_created.extend(cloud_dir.joinpath("sql").glob("**/*"))
+            rich_console.print(Text("Copied files."))
             if not check_mysql_volume_exists(
                 cloud_config["cloud_name"], cloud_config["org_name"]
             ):
@@ -141,14 +147,12 @@ def install_cloud(
                     capture_output=True,
                 )
                 rich_console.print(Text("Created docker volume."))
-            rich_console.print(Text("Copied files."))
         except PyrrowheadError as e:
-            shutil.rmtree(cloud_dir.joinpath("sql"))
-            shutil.rmtree(cloud_dir.joinpath("certs"))
-            cloud_dir.joinpath("docker-compose.yml")
-            cloud_dir.joinpath("initSQL.sh")
-            for _path in files_created:
-                _path.unlinx()
+            for p in files_created:
+                if p.is_file():
+                    p.unlink()
+                elif p.is_dir():
+                    shutil.rmtree(p)
             raise PyrrowheadError(
                 "An error occured during the installation, removing all created files."
             ) from e
