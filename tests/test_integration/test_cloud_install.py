@@ -169,16 +169,40 @@ class TestCloudInstall:
         debug_runner_output(res)
         assert res.exit_code == -1
         assert (
-                len(
-                        list(
-                                mock_pyrrowhead_path.joinpath(
-                                        "local-clouds/install-test-org/install-test-cloud/"
-                                ).iterdir()
-                        )
+            len(
+                list(
+                    mock_pyrrowhead_path.joinpath(
+                        "local-clouds/install-test-org/install-test-cloud/"
+                    ).iterdir()
                 )
-                == 4
+            )
+            == 4
         )
 
+    def test_root_certs_exist(self, mock_pyrrowhead_path):
+        res = runner.invoke(app, f"cloud install install-test-cloud.install-test-org")
+
+        org_path = mock_pyrrowhead_path.joinpath("local-clouds/install-test-org")
+        cloud_path = org_path.joinpath("install-test-cloud")
+        shutil.rmtree(org_path.joinpath("org_certs"))
+        shutil.rmtree(cloud_path.joinpath("certs"))
+
+        res = runner.invoke(app, f"cloud install install-test-cloud.install-test-org")
+
+        debug_runner_output(res)
+        assert res.exit_code == 0
+
+    def test_org_cert_exists(self, mock_pyrrowhead_path):
+        res = runner.invoke(app, f"cloud install install-test-cloud.install-test-org")
+
+        org_path = mock_pyrrowhead_path.joinpath("local-clouds/install-test-org")
+        cloud_path = org_path.joinpath("install-test-cloud")
+        shutil.rmtree(cloud_path.joinpath("certs"))
+
+        res = runner.invoke(app, f"cloud install install-test-cloud.install-test-org", input="123456\n")
+
+        debug_runner_output(res)
+        assert res.exit_code == 0
 
 
 class TestCloudUninstall:

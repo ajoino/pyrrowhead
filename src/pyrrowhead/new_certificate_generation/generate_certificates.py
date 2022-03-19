@@ -27,7 +27,7 @@ class KeyCertPair(NamedTuple):
 
 
 def set_password_encryption(password: Optional[str] = None):
-    if not password:
+    if password is None:
         return serialization.NoEncryption()
 
     return serialization.BestAvailableEncryption(password.encode())
@@ -336,6 +336,8 @@ def store_root_files(
     root_keycert: KeyCertPair,
     password=Optional[str],
 ) -> List[Path]:
+    if root_keycert is None:
+        return []
     if not root_cert_directory.exists():
         root_cert_directory.mkdir(parents=True)
     with open((pkcs12_path := root_cert_directory / "root.p12"), "wb") as root_p12:
@@ -465,6 +467,8 @@ def generate_certificates(
             ):
                 raise PyrrowheadError("Could not open root key or certificate")
             root_keycert = KeyCertPair(root_key, root_cert)
+    else:
+        root_keycert = None
 
     if not cloud_cert_dir.exists() and not org_cert_dir.exists():
         org_keycert = generate_ca_cert(

@@ -1,6 +1,7 @@
 import ipaddress
 import shutil
 import subprocess
+import contextlib
 from collections import OrderedDict
 from functools import partial
 from importlib.resources import path
@@ -37,9 +38,9 @@ yaml_safedump = partial(yaml.dump, Dumper=yamlloader.ordereddict.CSafeDumper)
 
 
 def install_cloud(
-    cloud_dir,
-    cloud_password,
-    org_password,
+    cloud_dir: Path,
+    cloud_password: str,
+    org_password: str,
 ):
     cloud_config = validate_cloud_config_file(
         cloud_dir.joinpath(CLOUD_CONFIG_FILE_NAME)
@@ -51,7 +52,7 @@ def install_cloud(
             core_system_config_file_strings = generate_config_files(
                 cloud_config, cloud_dir, cloud_password
             )
-            cloud_dir.joinpath("core_system_config").mkdir(parents=True)
+            cloud_dir.joinpath("core_system_config").mkdir(parents=True, exist_ok=True)
             for (
                 core_config_path,
                 core_config,
@@ -131,6 +132,7 @@ def install_cloud(
             files_created.extend(truststore_paths)
             rich_console.print("Generated truststore.p12")
             with path(database_config, "initSQL.sh") as init_sql_path:
+                # with contextlib.suppress(shutil.SameFileError):
                 copy_path = shutil.copy(init_sql_path, cloud_dir)
                 files_created.append(Path(copy_path))
             if not check_sql_initialized(cloud_dir):

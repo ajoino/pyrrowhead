@@ -201,7 +201,7 @@ def install(
         callback=password_callback,
     ),
     org_password: Optional[str] = typer.Option(
-        None,
+        "123456",
         metavar="ORG_PASSWORD",
         envvar="ORG_CERT_PASSWORD",
         prompt=True,
