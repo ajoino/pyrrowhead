@@ -164,3 +164,12 @@ def validate_cloud_config_file(config_file_path: Path) -> CloudDict:
         raise PyrrowheadError("Malformed configuration file:" "Missing cloud key(s)")
 
     return cloud_config
+
+
+def dir_is_empty(dir: Path) -> bool:
+    if not dir.exists():
+        return True
+    if dir.is_file():
+        return False
+
+    return not any(dir.iterdir())

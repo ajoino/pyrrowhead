@@ -199,7 +199,24 @@ class TestCloudInstall:
         cloud_path = org_path.joinpath("install-test-cloud")
         shutil.rmtree(cloud_path.joinpath("certs"))
 
-        res = runner.invoke(app, f"cloud install install-test-cloud.install-test-org", input="123456\n")
+        res = runner.invoke(
+            app, f"cloud install install-test-cloud.install-test-org", input="123456\n"
+        )
+
+        debug_runner_output(res)
+        assert res.exit_code == 0
+
+    def test_cloud_cert_exists(self, mock_pyrrowhead_path):
+        res = runner.invoke(app, f"cloud install install-test-cloud.install-test-org")
+
+        org_path = mock_pyrrowhead_path.joinpath("local-clouds/install-test-org")
+        cloud_path = org_path.joinpath("install-test-cloud")
+        for p in cloud_path.joinpath("certs/crypto/").glob("install-test-cloud.*"):
+            p.unlink()
+
+        res = runner.invoke(
+            app, f"cloud install install-test-cloud.install-test-org", input="123456\n"
+        )
 
         debug_runner_output(res)
         assert res.exit_code == 0

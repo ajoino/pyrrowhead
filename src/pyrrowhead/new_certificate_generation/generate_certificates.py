@@ -18,7 +18,7 @@ from cryptography.x509.oid import NameOID
 
 from pyrrowhead.constants import ORG_CERT_DIR, ROOT_CERT_DIR
 from pyrrowhead.types_ import CloudDict
-from pyrrowhead.utils import PyrrowheadError, validate_san
+from pyrrowhead.utils import PyrrowheadError, validate_san, dir_is_empty
 
 
 class KeyCertPair(NamedTuple):
@@ -317,6 +317,9 @@ def store_truststore(
         0
     ].value
     cloud_short_name, *_ = cloud_long_name.split(".")
+    if (truststore := cert_directory.joinpath("truststore.p12")).exists():
+        truststore.unlink()
+
     res = subprocess.run(
         f"keytool -importcert -trustcacerts"
         f" -noprompt -storepass {password!s}"
@@ -446,18 +449,13 @@ def generate_certificates(
     root_cert_dir = cloud_dir.parent / f"{ROOT_CERT_DIR}/crypto"
 
     system_keys_and_certs = {}
+    cloud_cert_dir_empty = dir_is_empty(cloud_cert_dir)
+    org_cert_dir_empty = dir_is_empty(org_cert_dir)
+    root_cert_dir_empty = dir_is_empty(root_cert_dir)
 
-    if (
-        not cloud_cert_dir.exists()
-        and not org_cert_dir.exists()
-        and not root_cert_dir.exists()
-    ):
+    if cloud_cert_dir_empty and org_cert_dir_empty and root_cert_dir_empty:
         root_keycert = generate_root_certificate()
-    elif (
-        not cloud_cert_dir.exists()
-        and not org_cert_dir.exists()
-        and root_cert_dir.exists()
-    ):
+    elif not root_cert_dir_empty:
         with open(root_cert_dir / "root.p12", "rb") as root_p12:
             root_key, root_cert, *_ = load_p12(  # type: ignore
                 root_p12.read(), "123456".encode()
@@ -467,10 +465,8 @@ def generate_certificates(
             ):
                 raise PyrrowheadError("Could not open root key or certificate")
             root_keycert = KeyCertPair(root_key, root_cert)
-    else:
-        root_keycert = None
 
-    if not cloud_cert_dir.exists() and not org_cert_dir.exists():
+    if cloud_cert_dir_empty and org_cert_dir_empty:
         org_keycert = generate_ca_cert(
             f"{cloud_config['org_name']}.arrowhead.eu",
             ca=True,
@@ -478,7 +474,7 @@ def generate_certificates(
             issuer_cert=root_keycert.cert,
             issuer_key=root_keycert.key,
         )
-    elif not cloud_cert_dir.exists() and org_cert_dir.exists():
+    elif not org_cert_dir_empty:
         with open(org_cert_dir / f"{cloud_config['org_name']}.p12", "rb") as org_p12:
             org_key, org_cert, ca_certs = load_p12(  # type: ignore
                 org_p12.read(), org_password.encode()
@@ -493,9 +489,10 @@ def generate_certificates(
                     f"currently has {len(ca_certs)}."
                 )
             org_keycert = KeyCertPair(org_key, org_cert)
+            root_keycert = KeyCertPair(None, ca_certs[0])  # type: ignore
 
     if (
-        not cloud_cert_dir.exists()
+        cloud_cert_dir_empty
         or not cloud_cert_dir.joinpath(f"{cloud_config['cloud_name']}.p12").exists()
     ):
         cloud_keycert = generate_ca_cert(
@@ -509,7 +506,7 @@ def generate_certificates(
         with open(
             cloud_cert_dir / f"{cloud_config['cloud_name']}.p12", "rb"
         ) as cloud_cert_file:
-            cloud_key, cloud_cert, ca_certs = load_p12(  #
+            cloud_key, cloud_cert, (org_cert, root_cert) = load_p12(  #
                 cloud_cert_file.read(), cloud_password.encode()
             )
             if len(ca_certs) != 2:
@@ -517,7 +514,9 @@ def generate_certificates(
                     f"Cloud cert must have exactly two CAs, "
                     f"currently have {len(ca_certs)}."
                 )
-            cloud_keycert = KeyCertPair(cloud_key, cloud_cert)  # type: ignore
+        cloud_keycert = KeyCertPair(cloud_key, cloud_cert)  # type: ignore
+        org_keycert = KeyCertPair(None, org_cert)  # type: ignore
+        root_keycert = KeyCertPair(None, root_cert)  # type: ignore
 
     sysop_keycert = generate_system_cert(
         f"sysop.{cloud_config['cloud_name']}.{cloud_config['org_name']}.arrowhead.eu",
