@@ -15,7 +15,11 @@ from pyrrowhead.utils import (
 from pyrrowhead.constants import CLOUD_CONFIG_FILE_NAME
 
 
-def check_server(address, port, secure, certfile, keyfile, cafile):
+def check_server(address, port, secure, certfile, keyfile, cafile, start_time, timeout):
+    if time.time() - start_time >= timeout:
+        rich_console.print("System start timed out.")
+        raise PyrrowheadError("System start timed out.")
+
     if secure:
         context = ssl.create_default_context(cafile=cafile.absolute())
         context.verify_mode = ssl.CERT_REQUIRED
@@ -28,7 +32,7 @@ def check_server(address, port, secure, certfile, keyfile, cafile):
             )
 
         try:
-            with socket.create_connection((address, port)) as sock:
+            with socket.create_connection((address, port), timeout=timeout) as sock:
                 with context.wrap_socket(sock, server_hostname=address):
                     return True
         except (
@@ -84,6 +88,7 @@ def start_local_cloud(cloud_directory: Path):
                     capture_output=True,
                 )
                 check_returncode(output, status)
+                start_time = time.time()
                 while not check_server(
                     core_system_config["address"],
                     core_system_config["port"],
@@ -91,6 +96,8 @@ def start_local_cloud(cloud_directory: Path):
                     sysop_certfile,
                     sysop_keyfile,
                     sysop_cafile,
+                    start_time,
+                    30,
                 ):
                     time.sleep(1)
                 rich_console.print(Text(f"{core_system_print_name} started."))

@@ -1,7 +1,7 @@
 from typing import Optional, Tuple, Dict
 
 from rich import box
-from rich.console import RenderGroup
+from rich.console import Group
 from rich.panel import Panel
 from rich.table import Table, Column
 
@@ -235,7 +235,7 @@ def get_system_id_from_name(system_name: str, address: str = "", port: int = -1)
 def render_service(response_data):
     tab_break = "\n\t"
     provider = response_data["provider"]
-    render_group = RenderGroup(
+    render_group = Group(
         (f'Service URI: {response_data["serviceUri"]}'),
         (
             f"Interfaces: [bright_yellow]\n\t"

@@ -156,7 +156,7 @@ def install_cloud(
                 elif p.is_dir():
                     shutil.rmtree(p)
             raise PyrrowheadError(
-                "An error occured during the installation, removing all created files."
+                f"An error occured during the installation: {e}.\nRemoving all created files."
             ) from e
         else:
             rich_console.print(

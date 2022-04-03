@@ -251,7 +251,6 @@ def store_system_files(
                 encryption_algorithm=set_password_encryption(password),
             )
         )
-        print(root_keycert.cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME))
     with open((crt_path := system_cert_path.with_suffix(".crt")), "wb") as crt_file:
         crt_file.write(system_keycert.cert.public_bytes(serialization.Encoding.PEM))
     with open((key_path := system_cert_path.with_suffix(".key")), "wb") as key_file:
@@ -455,7 +454,7 @@ def generate_certificates(
 
     if cloud_cert_dir_empty and org_cert_dir_empty and root_cert_dir_empty:
         root_keycert = generate_root_certificate()
-    elif not root_cert_dir_empty:
+    elif cloud_cert_dir_empty and org_cert_dir_empty and not root_cert_dir_empty:
         with open(root_cert_dir / "root.p12", "rb") as root_p12:
             root_key, root_cert, *_ = load_p12(  # type: ignore
                 root_p12.read(), "123456".encode()
@@ -474,7 +473,7 @@ def generate_certificates(
             issuer_cert=root_keycert.cert,
             issuer_key=root_keycert.key,
         )
-    elif not org_cert_dir_empty:
+    elif cloud_cert_dir_empty and not org_cert_dir_empty:
         with open(org_cert_dir / f"{cloud_config['org_name']}.p12", "rb") as org_p12:
             org_key, org_cert, ca_certs = load_p12(  # type: ignore
                 org_p12.read(), org_password.encode()

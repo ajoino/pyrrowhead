@@ -347,6 +347,9 @@ def up(
         start_local_cloud(clouds_directory)
         if set_active_cloud:
             set_active_cloud_func(cloud_identifier)
+    except PyrrowheadError as e:
+        stop_local_cloud(clouds_directory)
+        raise PyrrowheadError from e
     except KeyboardInterrupt:
         stop_local_cloud(clouds_directory)
         raise typer.Abort()
