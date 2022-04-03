@@ -1,6 +1,3 @@
-from typing import cast
-import json
-
 import rich.console
 from rich.panel import Panel
 from rich.text import Text
@@ -10,14 +7,14 @@ from textual.reactive import Reactive
 from textual.widgets import Static, Header, Footer
 from textual_inputs import TextInput, IntegerInput
 
-from pyrrowhead.utils import get_active_cloud_directory, validate_cloud_config_file
-from pyrrowhead.constants import CLOUD_CONFIG_FILE_NAME
-
 
 def render_system_info(
     system_name: str = "", address: str = "", port: int = -1
 ) -> rich.console.RenderableType:
-    string = f"System name: {system_name}\nAddress: {address}\nPort: {port if port > 0 else ''}"
+    string = (
+        f"System name: {system_name}\nAddress: "
+        f"{address}\nPort: {port if port > 0 else ''}"
+    )
     return Panel(string, title="System info", height=8)
 
 
@@ -128,16 +125,16 @@ class TuiApp(App):
         await self.header.focus()
 
     async def handle_system_name_on_change(self, message: Message) -> None:
-        self.log(f"System Name Field Contains: {message.sender.value}")
+        self.log(f"System Name Field Contains: {message.sender.value}")  # type: ignore
 
     async def handle_address_on_change(self, message: Message) -> None:
-        self.log(f"Address Field Contains: {message.sender.value}")
+        self.log(f"Address Field Contains: {message.sender.value}")  # type: ignore
 
     async def handle_port_on_change(self, message: Message) -> None:
-        self.log(f"Port Field Contains: {message.sender.value}")
+        self.log(f"Port Field Contains: {message.sender.value}")  # type: ignore
 
     async def handle_input_on_focus(self, message: Message) -> None:
-        self.current_index = self.tab_index.index(message.sender.name)
+        self.current_index = self.tab_index.index(message.sender.name)  # type: ignore
 
 
 def run_tui():

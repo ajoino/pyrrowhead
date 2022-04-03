@@ -437,6 +437,17 @@ CERTIFICATE_BUNDLE_TYPE = Tuple[
 ]
 
 
+def missing_cloud_files(cloud_cert_dir, cloud_config) -> bool:
+    cloud_name = cloud_config["cloud_name"]
+    key_path = cloud_cert_dir.joinpath(cloud_name, ".key")
+    crt_path = cloud_cert_dir.joinpath(cloud_name, ".crt")
+    p12_path = cloud_cert_dir.joinpath(cloud_name, ".p12")
+    if key_path.exists() and crt_path.exists() and p12_path.exists():
+        return False
+
+    return True
+
+
 def generate_certificates(
     cloud_config: CloudDict,
     cloud_dir: Path,
@@ -447,8 +458,7 @@ def generate_certificates(
     org_cert_dir = cloud_dir.parent / f"{ORG_CERT_DIR}/crypto/"
     root_cert_dir = cloud_dir.parent / f"{ROOT_CERT_DIR}/crypto"
 
-    system_keys_and_certs = {}
-    cloud_cert_dir_empty = dir_is_empty(cloud_cert_dir)
+    cloud_cert_dir_empty = missing_cloud_files(cloud_cert_dir, cloud_config)
     org_cert_dir_empty = dir_is_empty(org_cert_dir)
     root_cert_dir_empty = dir_is_empty(root_cert_dir)
 

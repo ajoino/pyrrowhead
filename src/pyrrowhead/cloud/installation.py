@@ -1,7 +1,6 @@
 import ipaddress
 import shutil
 import subprocess
-import contextlib
 from collections import OrderedDict
 from functools import partial
 from importlib.resources import path
@@ -30,6 +29,7 @@ from pyrrowhead.utils import (
     set_config,
     validate_cloud_config_file,
     PyrrowheadError,
+    store_cloud_config_file,
 )
 from pyrrowhead.constants import CLOUD_CONFIG_FILE_NAME
 
@@ -156,9 +156,14 @@ def install_cloud(
                 elif p.is_dir():
                     shutil.rmtree(p)
             raise PyrrowheadError(
-                f"An error occured during the installation: {e}.\nRemoving all created files."
+                f"An error occured during the installation: "
+                f"{e}.\nRemoving all created files."
             ) from e
         else:
+            cloud_config["installed"] = True
+            store_cloud_config_file(
+                cloud_dir.joinpath(CLOUD_CONFIG_FILE_NAME), cloud_config
+            )
             rich_console.print(
                 "Finished installing the [blue]Arrowhead[/blue] local cloud!"
             )
@@ -191,6 +196,8 @@ def uninstall_cloud(
         (installation_target / "docker-compose.yml").unlink()
         (installation_target / "initSQL.sh").unlink()
     subprocess.run(["docker", "volume", "rm", f"mysql.{cloud_name}.{org_name}"])
+    cloud_config["installed"] = False
+    store_cloud_config_file(config_path, cloud_config)
     rich_console.print("Uninstallation complete")
 
 

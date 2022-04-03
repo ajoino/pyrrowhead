@@ -1,8 +1,11 @@
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Optional, List, Callable
 from functools import wraps
 
 import typer
+from rich import box
+from rich.table import Table
 
 from pyrrowhead import rich_console
 from pyrrowhead.cloud.installation import (
@@ -13,6 +16,7 @@ from pyrrowhead.cloud.create import CloudConfiguration, create_cloud_config
 from pyrrowhead.cloud.run import start_local_cloud, stop_local_cloud
 from pyrrowhead.cloud.configuration import enable_ssl as enable_ssl_func
 from pyrrowhead.cloud.client_add import add_client_system
+from pyrrowhead.cloud.inspect import inspect
 from pyrrowhead.utils import (
     switch_directory,
     set_active_cloud as set_active_cloud_func,
@@ -135,7 +139,7 @@ def configure(
 
 @cloud_app.command()
 @print_pyrrowhead_error
-def list(
+def cli_list(
     # organization_filter: str = typer.Option('', '--organization', '-o'),
 ):
     """
@@ -226,6 +230,8 @@ def install(
 
     CLOUD_NAME and ORG_name are the cloud and organization names used in the generated certificates.
     """  # noqa
+
+    assert isinstance(org_password, str)
     install_cloud(
         cloud_directory,
         cloud_password=cloud_password,
@@ -406,3 +412,51 @@ def system(
         system_port,
         system_addl_addr,
     )
+
+
+@cloud_app.command(name="inspect")
+def cli_inspect(
+    cloud_identifier: str = ARG_CLOUD_IDENTIFIER,
+    cloud_name: Optional[str] = OPT_CLOUD_NAME,
+    organization_name: Optional[str] = OPT_ORG_NAME,
+    clouds_directory: Path = OPT_CLOUDS_DIRECTORY,
+):
+    res = inspect(
+        clouds_directory,
+    )
+    info_grid = Table(box=box.SIMPLE)
+    info_grid.add_column(width=22, header="Cloud Information")
+    for prop, value in res["Cloud Information"].items():
+        if isinstance(value, Sequence) and not isinstance(value, str):
+            if len(value) == 0:
+                continue
+            info_grid.add_row(prop, str(value[0]))
+            for val in value[1:]:
+                info_grid.add_row("", str(val))
+        else:
+            info_grid.add_row(prop, str(value))
+
+    core_table = Table(box=box.SIMPLE)
+    core_table.add_column(width=22, header="Core Systems", header_style="bold")
+    core_table.add_column(width=15, header="Address", header_style="italic")
+    core_table.add_column(width=10, header="Port", header_style="italic")
+    for core_name, core_sys in res["Core Systems"].items():
+        core_table.add_row(
+            core_name.replace("_", " ").capitalize(),
+            *(str(val) for val in core_sys.values()),
+        )
+
+    client_table = Table(box=box.SIMPLE)
+    client_table.add_column(width=22, header="Client Systems", header_style="bold")
+    client_table.add_column(width=15, header="Address", header_style="italic")
+    client_table.add_column(width=10, header="Port", header_style="italic")
+    for client_name, client_sys in res["Client Systems"].items():
+        client_table.add_row(
+            client_name.replace("_", " ").capitalize(),
+            *(str(val) for val in client_sys.values()),
+        )
+
+    rich_console.print(info_grid)
+    rich_console.print(core_table)
+    if len(client_table.rows) > 1:
+        rich_console.print(client_table)

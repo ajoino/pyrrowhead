@@ -215,7 +215,7 @@ class TestCloudInstall:
             p.unlink()
 
         res = runner.invoke(
-            app, f"cloud install install-test-cloud.install-test-org", input="123456\n"
+            app, "cloud install install-test-cloud.install-test-org", input="123456\n"
         )
 
         debug_runner_output(res)

@@ -153,7 +153,7 @@ def validate_cloud_config_file(config_file_path: Path) -> CloudDict:
             ).get("cloud")
         except AttributeError:
             raise PyrrowheadError(
-                "Malformed configuration file: " "Could not load YAML document"
+                "Malformed configuration file: Could not load YAML document"
             )
 
     if cloud_config is None:
@@ -161,9 +161,18 @@ def validate_cloud_config_file(config_file_path: Path) -> CloudDict:
             "Malformed cloud configuration file: Missing cloud information."
         )
     elif set(cloud_config.keys()) != set(CloudDict.__annotations__.keys()):
-        raise PyrrowheadError("Malformed configuration file:" "Missing cloud key(s)")
+        raise PyrrowheadError("Malformed configuration file: Missing cloud key(s)")
 
     return cloud_config
+
+
+def store_cloud_config_file(config_file_path: Path, cloud_config: CloudDict):
+    with open(config_file_path, "w") as config_file:
+        yaml.dump(
+            {"cloud": cloud_config},
+            config_file,
+            Dumper=yamlloader.ordereddict.CSafeDumper,
+        )
 
 
 def dir_is_empty(dir: Path) -> bool:

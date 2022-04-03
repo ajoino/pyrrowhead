@@ -21,6 +21,7 @@ class CloudDict(TypedDict):
     ssl_enabled: bool
     subnet: str
     core_san: List[str]
+    installed: bool
     core_systems: Dict[str, CoreSystemDict]
     client_systems: Dict[str, ClientSystemDict]
 
