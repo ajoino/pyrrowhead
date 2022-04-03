@@ -1,6 +1,12 @@
 Changelog
 =========
 
+## Version 0.6.0b
+ - Bumped `rich` version to 12
+ - Reworked the installation procedure, crashes.
+   - This is not true if the user ends the installation with `ctrl+c`. 
+ - 
+
 ## Version 0.5.0b
  - Removed all code running at install time. Pyrrowhead will no instead look for a
    `~/.pyrrowhead` directory and initialize the directory if it doesn't exist.
